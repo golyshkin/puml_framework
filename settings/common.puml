@@ -31,6 +31,18 @@ right header Author: $AUTHOR
     # **DIAGRAM_ID** = [str] - The Diagram Id which contains from pattern **DOMAIN-FEATURE-DIAGRAM_TYPE** (e.g. IVI-OTA-SEQ, IVI-OTA-UC, IVI-OTA-SM).
     # **DIAGRAM_VER** = [str] - The Diagram Version (e.g. v.1)
     # **DIAGRAM_TITLE** = [str] - The Diagram Title (e.g. OTA Initialization)
+    \t
+    Supported includes:
+    \t
+    # settings/seq.puml - sequence diagram PUML framework settings
+    ## components/external.puml - external system components
+    ## components/generic.puml - generic components (actors)
+    ## components/hw_ift.puml - IVI IFT domain HW components
+    ## components/hw_sfi.puml - IVI SFI domain HW components
+    ## components/sw_ift.puml - IVI IFT domain SW components
+    ## components/sw_sfi.puml - IVI SFI domain SW components
+    ## components/sw_vcp.puml - IVI VCP domain SW components
+    # settings/sm.puml - sequence diagram PUML framework settings
   end note
 !endif
 
