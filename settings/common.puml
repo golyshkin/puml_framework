@@ -25,6 +25,7 @@ right header Author: $AUTHOR
     \t
     Used Variables:
     \t
+    ===
     # **HELP** = [true, false] - Show this Help
     # **URL_BASE** = [$URL_BASE] - The base PUML scripts location. Used for simplify '!include' definitions in framework & diagrams.
     # **AUTHOR** = [str] - The Diagram Author email (e.g. Aleksandr.Golyshkin@atom.ru)
@@ -34,6 +35,7 @@ right header Author: $AUTHOR
     \t
     Supported includes:
     \t
+    ===
     # settings/seq.puml - sequence diagram PUML framework settings
     ## components/external.puml - external system components
     ## components/generic.puml - generic components (actors)
