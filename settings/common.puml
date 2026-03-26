@@ -6,7 +6,7 @@ hide unlinked
 !pragma teoz false
 
 ' PUML Framework defined variables 
-!$URL_BASE = "https://raw.githubusercontent.com/golyshkin/DEVPROM_link_fixer/refs/heads/main/tmp"
+!$URL_BASE = "https://raw.githubusercontent.com/golyshkin/puml_framework/refs/heads/main"
 !$COMP_NOTE = "Full Components Description - [[https://confluence.e-kama.com/display/IVI/Software+Subsystems Software Subsystems Page]]"
 
 mainframe $DIAGRAM_ID - $DIAGRAM_VER: $DIAGRAM_TITLE\t
