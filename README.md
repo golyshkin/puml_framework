@@ -21,3 +21,5 @@ IVI_SFI -> IVI_IFT: hello
 
 @enduml
 ```
+# Output
+![](resources/output.png)
