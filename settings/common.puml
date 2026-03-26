@@ -36,15 +36,15 @@ right header Author: $AUTHOR
     Supported includes:
     \t
     ===
-    # settings/seq.puml - sequence diagram PUML framework settings
-    ## components/external.puml - external system components
-    ## components/generic.puml - generic components (actors)
-    ## components/hw_ift.puml - IVI IFT domain HW components
-    ## components/hw_sfi.puml - IVI SFI domain HW components
-    ## components/sw_ift.puml - IVI IFT domain SW components
-    ## components/sw_sfi.puml - IVI SFI domain SW components
-    ## components/sw_vcp.puml - IVI VCP domain SW components
-    # settings/sm.puml - sequence diagram PUML framework settings
+    # **settings/seq.puml** - sequence diagram PUML framework settings
+    ## **components/external.puml** - external system components
+    ## **components/generic.puml** - generic components (actors)
+    ## **components/hw_ift.puml** - IVI IFT domain HW components
+    ## **components/hw_sfi.puml** - IVI SFI domain HW components
+    ## **components/sw_ift.puml** - IVI IFT domain SW components
+    ## **components/sw_sfi.puml** - IVI SFI domain SW components
+    ## **components/sw_vcp.puml** - IVI VCP domain SW components
+    # **settings/sm.puml** - sequence diagram PUML framework settings
   end note
 !endif
 
