@@ -1,0 +1,91 @@
+@startuml
+
+' Diagram common configuration
+skinparam mainframeBorderColor #lightgrey
+hide unlinked
+!pragma teoz false
+
+' PUML Framework defined variables 
+!$URL_BASE = "https://raw.githubusercontent.com/golyshkin/DEVPROM_link_fixer/refs/heads/main/tmp"
+!$COMP_NOTE = "Full Components Description - [[https://confluence.e-kama.com/display/IVI/Software+Subsystems Software Subsystems Page]]"
+
+mainframe $DIAGRAM_ID - $DIAGRAM_VER: $DIAGRAM_TITLE\t
+right header Author: $AUTHOR
+
+!if ($HELP == true )
+  !if ( $DIAGRAM_TYPE == "SEQ" )
+     note across
+  !elseif ( $DIAGRAM_TYPE == "SM" )
+     note as FLOATING
+  !else
+     note
+  !endif
+  
+    **HELP Menu:**
+    \t
+    Used Variables:
+    \t
+    # **HELP** = [true, false] - Show this Help
+    # **URL_BASE** = [$URL_BASE] - The base PUML scripts location. Used for simplify '!include' definitions in framework & diagrams.
+    # **AUTHOR** = [str] - The Diagram Author email (e.g. Aleksandr.Golyshkin@atom.ru)
+    # **DIAGRAM_ID** = [str] - The Diagram Id which contains from pattern **DOMAIN-FEATURE-DIAGRAM_TYPE** (e.g. IVI-OTA-SEQ, IVI-OTA-UC, IVI-OTA-SM).
+    # **DIAGRAM_VER** = [str] - The Diagram Version (e.g. v.1)
+    # **DIAGRAM_TITLE** = [str] - The Diagram Title (e.g. OTA Initialization)
+  end note
+!endif
+
+!procedure $defineActor( $type, $name, $desc, $stereotype )
+    !if $type == "actor"
+        actor $name
+    !elseif $type == "database"
+        database $name
+    !else
+        participant $name <<$stereotype>> [
+        =$name
+        ----
+        ""$desc""
+        ]
+    !endif
+!endprocedure
+
+' Define actor list holder for each type
+!global $sw_ift_actor_list = ""
+!global $sw_sfi_actor_list = ""
+!global $external_actor_list = ""
+!global $generic_actor_list = ""
+
+!procedure $addActor( $comp_tyte, $actor_type, $actor_name, $actor_desc, $actor_stereotype = "none" )
+    $defineActor( $actor_type, $actor_name, $actor_desc, $actor_stereotype)
+    
+    !if ($actor_stereotype == "")
+        !$actor_stereotype = "none"
+    !endif
+    
+    !$entry = "# " + "**" + $actor_name + "** <<" + $actor_stereotype + ">> - " + $actor_desc + "\n"
+    
+    !if ( $comp_tyte == "sw_ift" )
+        !$sw_ift_actor_list = $sw_ift_actor_list + $entry
+    !elseif ( $comp_tyte == "sw_sfi" )
+        !$sw_sfi_actor_list = $sw_sfi_actor_list + $entry
+    !elseif ( $comp_tyte == "external" )
+        !$external_actor_list = $external_actor_list + $entry
+    !elseif ( $comp_tyte == "generic" )
+        !$generic_actor_list = $generic_actor_list + $entry
+    !endif
+!endprocedure
+
+!function $getActorList( $comp_tyte )
+    !if ( $comp_tyte == "sw_ift" )
+        !return $sw_ift_actor_list
+    !elseif ( $comp_tyte == "sw_sfi" )
+        !return $sw_sfi_actor_list
+    !elseif ( $comp_tyte == "external" )
+        !return $external_actor_list
+    !elseif ( $comp_tyte == "generic" )
+        !return $generic_actor_list
+    !endif
+
+    !return ""
+!endfunction
+
+@enduml

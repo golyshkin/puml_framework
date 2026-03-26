@@ -1,0 +1,9 @@
+@startuml
+
+$addActor( "sw_sfi", "participant", "IVI_SFI", "Safety Island ASIL-B", "system" )
+
+!if ( $HELP == true )
+  note across #lightgrey: **Defined SW SFI Components**:\n\t\n**Note:** $COMP_NOTE\n\t\n$getActorList( "sw_sfi" )
+!endif
+
+@enduml
