@@ -44,7 +44,7 @@ right header Author: $AUTHOR
     ## **components/sw_ift.puml** - IVI IFT domain SW components
     ## **components/sw_sfi.puml** - IVI SFI domain SW components
     ## **components/sw_vcp.puml** - IVI VCP domain SW components
-    # **settings/sm.puml** - sequence diagram PUML framework settings
+    # **settings/sm.puml** - state machine diagram PUML framework settings
   end note
 !endif
 
