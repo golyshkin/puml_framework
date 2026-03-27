@@ -7,7 +7,7 @@ $addActor( "generic", "actor", "System", "System Actor" )
 
 ' End Generic Compoenets Definition
 
-!if ($HELP == true )
+!if ( $CONFIG.HELP == true )
 	note across #lightgreen: **Defined Generic Actors**:\n\t\n**Note:** $COMP_NOTE\n\t\n$getActorList( "generic" )
 !endif
 
