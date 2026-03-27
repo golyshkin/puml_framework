@@ -13,9 +13,9 @@ mainframe $CONFIG.DIAGRAM_ID - $CONFIG.DIAGRAM_VER: $CONFIG.DIAGRAM_TITLE\t
 right header Author: $CONFIG.AUTHOR
 
 !if ( $CONFIG.HELP == true )
-  !if ( $CONFIG.DIAGRAM_TYPE == "SEQ" )
+  !if ( $DIAGRAM_TYPE == "SEQ" )
      note across
-  !elseif ( $CONFIG.DIAGRAM_TYPE == "SM" )
+  !elseif ( $DIAGRAM_TYPE == "SM" )
      note as FLOATING
   !else
      note
