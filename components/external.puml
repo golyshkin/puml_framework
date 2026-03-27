@@ -7,7 +7,7 @@ $addActor( "external", "participant", "SGW",  "Secure Gateway", "system" )
 
 ' End Generic Compoenets Definition
 
-!if ($HELP == true )
+!if ( $CONFIG.HELP == true )
 	note across #lightgreen: **Defined External Components**:\n\t\n**Note:** $COMP_NOTE\n\t\n$getActorList( "external" )
 !endif
 
