@@ -36,7 +36,7 @@ right header Author: $CONFIG.AUTHOR
     **Used Variables:**
     \t
     ===
-    # **URL_BASE** = [$URL_BASE] - The base PUML scripts location. Used for simplify '!include' definitions in framework & diagrams.
+    # **<b>$</b>URL_BASE** = [$URL_BASE] - The base PUML scripts location. Used for simplify '!include' definitions in framework & diagrams.
     \t
     **Supported includes:**
     \t
