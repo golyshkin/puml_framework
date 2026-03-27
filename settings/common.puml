@@ -22,8 +22,9 @@ right header Author: $CONFIG.AUTHOR
   !endif
   
     **HELP Menu:**
+    ===
     \t
-    Used Configuration Parameters:
+    ## Used Configuration Parameters:
     \t
     ===
     # **HELP** = [true, false] - Show this Help
@@ -31,13 +32,15 @@ right header Author: $CONFIG.AUTHOR
     # **DIAGRAM_ID** = [str] - The Diagram Id which contains from pattern **DOMAIN-FEATURE-DIAGRAM_TYPE** (e.g. IVI-OTA-SEQ, IVI-OTA-UC, IVI-OTA-SM).
     # **DIAGRAM_VER** = [str] - The Diagram Version (e.g. v.1)
     # **DIAGRAM_TITLE** = [str] - The Diagram Title (e.g. OTA Initialization)
+    ===
     \t
-    Used Variables:
+    ## Used Variables:
     \t
     ===
     # **URL_BASE** = [$URL_BASE] - The base PUML scripts location. Used for simplify '!include' definitions in framework & diagrams.
+    ===
     \t
-    Supported includes:
+    ## Supported includes:
     \t
     ===
     # **settings/seq.puml** - sequence diagram PUML framework settings
