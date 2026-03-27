@@ -17,7 +17,7 @@ $addActor( "sw_ift", "participant", "IFT_PHN", "Phonebook", "app" )
 
 ' End IVI SW Compoenets Definition
 
-!if ($HELP == true )
+!if ( $CONFIG.HELP == true )
 	note across #lightblue: **Defined SW IFT Components**:\n\t\n**Note:** $COMP_NOTE\n\t\n$getActorList( "sw_ift" )
 !endif
 
