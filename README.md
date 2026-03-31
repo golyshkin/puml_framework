@@ -4,11 +4,13 @@
 ```
 @startuml
 
-!$HELP = true
-!$AUTHOR = "Aleksandr.Golyshkin@atom.ru"
-!$DIAGRAM_ID  = "IVI-TEST-SEQ"
-!$DIAGRAM_VER = "v.1"
-!$DIAGRAM_TITLE = "Diagram Test Title."
+!$CONFIG = {
+   "HELP": true,
+   "AUTHOR": "Alexandr.Golyshkin@ya.ru",
+   "DIAGRAM_ID": "IVI-TEST-SEQ",
+   "DIAGRAM_VER": "v.1",
+   "DIAGRAM_TITLE": "This is Test Diagram based on PUML Framework."
+}
 
 !include https://raw.githubusercontent.com/golyshkin/puml_framework/refs/heads/main/settings/seq.puml
 !include $URL_BASE/components/generic.puml
