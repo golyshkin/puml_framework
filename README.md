@@ -1,7 +1,7 @@
 # puml_framework
 
 # Usage Example
-```
+```puml
 @startuml
 
 !$CONFIG = {
