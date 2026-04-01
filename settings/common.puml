@@ -10,7 +10,11 @@ hide unlinked
 !$COMP_NOTE = "Full Components Description - [[https://confluence.e-kama.com/display/IVI/Software+Subsystems Software Subsystems Page]]"
 
 mainframe $CONFIG.DIAGRAM_ID - $CONFIG.DIAGRAM_VER: $CONFIG.DIAGRAM_TITLE\t
-right header Author: $CONFIG.AUTHOR\nFile: %filename()
+
+!$filename ?= "Undefined"
+!$filename = %filename()
+
+right header Author: $CONFIG.AUTHOR, File: $filename 
 
 !if ( $CONFIG.HELP == true )
   !if ( $DIAGRAM_TYPE == "SEQ" )
