@@ -10,9 +10,10 @@ hide unlinked
 !$COMP_NOTE = "Full Components Description - [[https://confluence.e-kama.com/display/IVI/Software+Subsystems Software Subsystems Page]]"
 
 mainframe $CONFIG.DIAGRAM_ID - $CONFIG.DIAGRAM_VER: $CONFIG.DIAGRAM_TITLE\t
-
-!$filename ?= "Undefined"
 !$filename = %filename()
+!if ( $filename == "" )
+  !$filename = "Undefined"
+!endif
 
 right header Author: $CONFIG.AUTHOR, File: $filename 
 
