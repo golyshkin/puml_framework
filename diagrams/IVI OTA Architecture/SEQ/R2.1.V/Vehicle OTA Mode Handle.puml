@@ -1,0 +1,57 @@
+!$CONFIG = {
+"HELP": false,
+"SHOW_COMP": false,
+"TEOZ": false,
+"AUTHOR": "Alexandr.Golyshkin@atom.team",
+"DIAGRAM_ID": "IVI-OTA-SEQ",
+"DIAGRAM_VER": "v.5",
+"DIAGRAM_TITLE": "Vehicle OTA Mode Handle"
+}
+
+!include https://gitlab.int.e-kama.com/open/architecture/dcp/sw-architecture/-/raw/master/settings/seq.puml
+!include $URL_BASE/components/external.puml
+!include $URL_BASE/components/sw_vcp.puml
+!include $URL_BASE/components/sw_sfi.puml
+!include $URL_BASE/components/sw_ift.puml
+'!include $URL_BASE/components/generic.puml
+
+ref over SGW, IVI_IFT: [["https://confluence.e-kama.com/display/IVI/IVI+OTA+User+Interaction+Architecture#IVIOTAUserInteractionArchitecture-DriverStartstheSWUpdate" Driver Starts the SW Update]]
+
+SGW o-> SGW ++: SW Update Countdown Timer Expired
+
+note across
+The system notifies an all ECUs about OTA update started and vehicle is moved to OTA limited operation state.
+end note
+
+SGW -> CGW ++: IVI_VehicleModeSts( 0x02 )
+CGW -> IVI_VCP --++: IVI_VehicleModeSts( 0x02 )
+IVI_VCP -> IVI_VCP ++: onOtaCustomerMode()
+note over IVI_VCP
+IVI_VCP disables CAN faults checking and handle DTC codes related to external network.
+end note
+IVI_VCP -> IVI_VCP : disableCanHealth()
+IVI_VCP -> IVI_VCP --: disableDtcCodes()
+IVI_VCP -> IVI_SFI --++: IVI_VehicleModeSts( 0x02 )
+IVI_SFI -> IVI_SFI ++: onOtaCustomerMode()
+note over IVI_SFI
+IVI_SFI monitors SWP ECU, so disabling following
+\t
+# SWP Health Check
+# SWP DTC codes
+end note
+IVI_SFI -> IVI_SFI --: disableSwpHealthCheck()
+IVI_SFI -> IVI_SFI --: disableSwpDtcCodes()
+deactivate IVI_SFI
+SGW -> IVI_IFT --++: vehicle/{VIN}/diagnostics/vehicleMode/customerModeState( OTA_MODE )
+note left IVI_IFT
+IVI_IFT disables MQTT faults checking and handle DTC codes related to external network.
+end note
+IVI_IFT -> IVI_IFT ++: onOtaCustomerMode()
+IVI_IFT -> IVI_IFT : disableDtcCodes()
+IVI_IFT -> IVI_IFT --: <del>disableMqttHealth()</del>
+
+opt IVI OTA SW Update Started
+  == UDS Extended/Programming Diagnostic Session is Established ==
+  ref over SGW, IVI_IFT: [["https://confluence.e-kama.com/pages/viewpage.action?pageId=217384418#IVIOTAUpdateArchitecture-SWUpdateCommon" SW Update Common]]
+  |||
+end opt

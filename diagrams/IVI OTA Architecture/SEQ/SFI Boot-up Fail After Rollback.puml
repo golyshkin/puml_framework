@@ -1,0 +1,49 @@
+!$CONFIG = {
+"HELP": false,
+"SHOW_COMP": false,
+"TEOZ": true,
+"AUTHOR": "Alexandr.Golyshkin@atom.team",
+"DIAGRAM_ID": "IVI-OTA-SEQ",
+"DIAGRAM_VER": "v.6",
+"DIAGRAM_TITLE": "SFI Boot-up Fail After Rollback"
+}
+
+' Date 15.04.2026
+!include https://gitlab.int.e-kama.com/open/architecture/dcp/sw-architecture/-/raw/master/settings/seq.puml
+'!include $URL_BASE/components/generic.puml
+!include $URL_BASE/components/sw_ift.puml
+!include $URL_BASE/components/sw_sfi.puml
+!include $URL_BASE/components/sw_vcp.puml
+
+ref over IVI_SFI, IVI_VCP
+[[ "#IVIOTARollbackArchitecture-SFIBoot-upFailafterSWUpdate" Error SFI boot-up after SW update]]
+\t
+# fail_count = 0
+# Sfi Boot Watchdog Timer is active
+end ref
+
+
+==IVI System Reboot==
+loop
+  note over IVI_SFI: The system starts from old boot slot (rollback applied).
+  ?o-> IVI_SFI ++: System Starts Boot-up
+  IVI_SFI -> IVI_SFI : sfi_boot()
+  note over IVI_SFI: An error occurred during IVI_SFI booting. The IVI_SFI booting stops.
+  IVI_SFI -> IVI_SFI : boot_sequencer(): ERR_NO_BOOT_SEQ
+  IVI_SFI -> IVI_SFI: sfi_shutdown()
+  destroy IVI_SFI
+    
+  {start} IVI_VCP o-> IVI_VCP ++: startSfiBootWatchDogExpired()
+  |||
+  alt fail_count < 3
+    IVI_VCP -> IVI_VCP : ++fail_count
+    {end} IVI_VCP -> IVI_VCP : startSfiBootWatchDogTimer()
+    IVI_VCP -> IVI_VCP : Reset CPU Cores
+  else else
+    IVI_VCP -> IVI_VCP : stopSfiBootWatchDogTimer()
+    IVI_VCP -> IVI_VCP --: setSocState( RUN )
+    |||
+  end alt
+  
+  {start} <-> {end}: boot_time
+end loop

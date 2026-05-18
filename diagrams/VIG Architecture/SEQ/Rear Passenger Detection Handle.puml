@@ -1,0 +1,90 @@
+!$CONFIG = {
+"AUTHOR": "Alexandr.Golyshkin@atom.team",
+"DIAGRAM_ID": "IVI-VIG-SEQ",
+"DIAGRAM_VER": "v.2",
+"DIAGRAM_TITLE": "Rear Passenger Detection Handle"
+}
+
+!include https://gitlab.int.e-kama.com/open/architecture/dcp/sw-architecture/-/raw/master/settings/seq.puml
+!include $URL_BASE/components/generic.puml
+'!include $URL_BASE/components/external.puml
+'!include $URL_BASE/components/sw_vcp.puml
+'!include $URL_BASE/components/sw_sfi.puml
+!include $URL_BASE/components/sw_ift.puml
+
+
+User o-> IFT_VA_APP ++: Say key wake-up word
+IFT_VA_APP -> IFT_VA_APP: onWakeUp
+IFT_VA_APP -> IFT_VA_APP --: onStartListen
+
+autonumber inc A
+note over IFT_VA_APP
+User says command for example:
+\t
+# Open my door
+# Open rear window on 50%
+# etc.
+end note
+User o-> IFT_VA_APP ++: Say command related to REAR position
+IFT_VA_APP -> IFT_VA_APP : onParse
+note over IFT_VA_APP
+IFT_VA_APP parses the user request and sends a formatted command to IFT_VIG_SRV
+\t
+**Data:**
+\t
+"commandId": <unique id>,
+"commandSubject": <subject>,
+"commandName": <cmdName>,
+"speakerPosition": "**Rear**",
+"XX_Zones": "FrontLeft", "FrontRight", "RearLeft", "RearRight", ... , "Unspecified",
+...
+end note
+IFT_VA_APP ->> IFT_VIG_SRV --++: command
+IFT_VIG_SRV -> IFT_VIG_SRV: handleCommand()
+alt XX_Zones = Unspecified
+   IFT_VIG_SRV -> IFT_MQTT ++: vehicle/{VIN}/hardware/ergonomics/driverSideBackSeat/occupiedState
+   IFT_MQTT --> IFT_VIG_SRV --: driverSideBackSeatOccupiedState
+   IFT_VIG_SRV -> IFT_MQTT ++: vehicle/{VIN}/hardware/ergonomics/passengerSideBackSeat/occupiedState
+   IFT_MQTT --> IFT_VIG_SRV --: passengerSideBackSeatOccupiedState
+
+   alt driverSideBackSeatOccupiedState.signal_available_status != OK OR passengerSideBackSeatOccupiedState.signal_available_status != OK
+      IFT_VIG_SRV --> IFT_VA_APP ++: auto.atom.action.voice.RESULT( RESULT_ERROR_REAR_ZONE_POSITION )
+      note right IFT_VA_APP: Play **RESULT_ERROR_REAR_ZONE_POSITION** for current executing command to specify the rear position.
+      IFT_VA_APP -> IFT_VA_APP--: Play Result RESULT_ERROR_REAR_ZONE_POSITION
+   else driverSideBackSeatOccupiedState = OCCUPIED AND passengerSideBackSeatOccupiedState = OCCUPIED
+      IFT_VIG_SRV --> IFT_VA_APP ++: auto.atom.action.voice.RESULT( RESULT_ERROR_REAR_ZONE_POSITION )
+      note right IFT_VA_APP: Play **RESULT_ERROR_REAR_ZONE_POSITION** for current executing command to specify the rear position.
+      IFT_VA_APP -> IFT_VA_APP --: Play Result RESULT_ERROR_REAR_ZONE_POSITION
+   else driverSideBackSeatOccupiedState = UNOCCUPIED AND passengerSideBackSeatOccupiedState = UNOCCUPIED
+      IFT_VIG_SRV --> IFT_VA_APP ++: auto.atom.action.voice.RESULT( RESULT_ERROR_REAR_ZONE_POSITION )
+      note right IFT_VA_APP: Play **RESULT_ERROR_REAR_ZONE_POSITION** for current executing command to specify the rear position.
+      IFT_VA_APP -> IFT_VA_APP --: Play Result RESULT_ERROR_REAR_ZONE_POSITION
+   else ( driverSideBackSeatOccupiedState = OCCUPIED AND passengerSideBackSeatOccupiedState = UNOCCUPIED ) OR\n ( passengerSideBackSeatOccupiedState = OCCUPIED AND driverSideBackSeatOccupiedState = UNOCCUPIED )
+      IFT_VIG_SRV -> IFT_SYNC_SRV ++: command
+      IFT_SYNC_SRV -> IFT_SYNC_SRV : executeCommand()
+      IFT_SYNC_SRV --> IFT_VIG_SRV --: RESULT_SUCCESS
+      note right IFT_VA_APP
+      **Data:**
+      \t
+      "commandId": <unique id>,
+      "code": "RESULT_SUCCESS",
+      "data": { ... }
+      end note
+      IFT_VIG_SRV --> IFT_VA_APP --: result
+      |||
+   end alt
+else else
+
+   IFT_VIG_SRV -> IFT_SYNC_SRV ++: command
+   activate IFT_VIG_SRV
+   IFT_SYNC_SRV -> IFT_SYNC_SRV : executeCommand()
+   IFT_SYNC_SRV --> IFT_VIG_SRV --: RESULT_SUCCESS
+   note right IFT_VA_APP
+   **Data:**
+   \t
+   "commandId": <unique id>,
+   "code": "RESULT_SUCCESS",
+   "data": { ... }
+   end note
+   IFT_VIG_SRV --> IFT_VA_APP --: result
+end alt

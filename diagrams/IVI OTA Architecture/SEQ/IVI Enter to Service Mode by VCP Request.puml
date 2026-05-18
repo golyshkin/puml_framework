@@ -1,0 +1,69 @@
+!$CONFIG = {
+"HELP": false,
+"SHOW_COMP": false,
+"TEOZ": false,
+"AUTHOR": "Alexandr.Golyshkin@atom.team",
+"DIAGRAM_ID": "IVI-OTA-SEQ",
+"DIAGRAM_VER": "v.4",
+"DIAGRAM_TITLE": "IVI Enter to Service Mode by VCP Request"
+}
+
+!include https://gitlab.int.e-kama.com/open/architecture/dcp/sw-architecture/-/raw/master/settings/seq.puml
+!include $URL_BASE/components/external.puml
+!include $URL_BASE/components/generic.puml
+!include $URL_BASE/components/sw_vcp.puml
+!include $URL_BASE/components/sw_sfi.puml
+!include $URL_BASE/components/sw_ift.puml
+
+==IVI_IVI_VCP UDS Extended Diagnostic Session is established==
+...
+SGW -> IVI_VCP ++: Communication Control (0x28)\n[0x03 0x03 - Disable Non Diagnostic Communication]
+activate SGW
+note over IVI_VCP
+IVI_VCP moves to service mode before start SW update.
+end note
+IVI_VCP -> IVI_VCP ++: onServiceMode()
+IVI_VCP -> IVI_VCP : setSocState( SERVICE )
+note over IVI_VCP
+IVI_VCP stops sending and recieving non-diagnostic messages to/from CAN.
+end note
+IVI_VCP -> IVI_VCP: stopCanRxTxProcessing()
+note over IVI_VCP
+IVI_VCP stops set DTC.
+end note
+IVI_VCP -> IVI_VCP: stopDtcTxProcessing()
+note over IVI_VCP
+IVI_VCP stops checking IVI_SFI heartbeats and other safety mechanisms.
+end note
+IVI_VCP -> IVI_VCP: stopSafetyCheck()
+IVI_VCP ->> IVI_SFI --++: SYSTEM_SCP_CTRL_STATE_MACHINE_MODE( SERVICE )
+IVI_VCP --> SGW --: UDS PositiveResponse
+deactivate SGW
+IVI_SFI -> IVI_SFI ++: onServiceMode()
+deactivate IVI_VCP
+note over IVI_SFI
+Stop sending a heartbeats to IVI_VCP.
+end note
+IVI_SFI -> IVI_SFI : ssm_heartbeat_stop()
+note over IVI_SFI
+IVI_SFI stops safety check in SERVICE mode:
+\t
+# Continue sending heartbeats to IVI_IFT
+# Ignoring heartbeats from IVI_IFT
+# Ignoring DTC requests from IFT
+end note
+IVI_SFI -> IVI_SFI: stopSafetyCheck()
+IVI_SFI -> IVI_SFI : logServiceState()
+IVI_SFI ->> IVI_IFT --++: ATOM_REGISTER_IVI_VCP_STATE( SERVICE )
+deactivate IVI_SFI
+IVI_IFT -> IVI_IFT ++: onServiceMode()
+note over IVI_IFT
+IVI_IFT stops safety check in SERVICE mode:
+\t
+# Continue sending heartbeats to IVI_SFI
+# Ignoring heartbeats from IVI_SFI, but continue logging detected missed heartbeats
+end note
+IVI_IFT -> IVI_IFT: stopSafetyCheck()
+IVI_IFT -> IVI_IFT --: logServiceState()
+deactivate IVI_SFI
+deactivate IVI_IFT

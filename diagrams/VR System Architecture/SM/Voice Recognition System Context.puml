@@ -1,0 +1,83 @@
+!$CONFIG = {
+"AUTHOR": "Aleksandr.Golyshkin@atom.team",
+"DIAGRAM_ID": "IVI-COMP-VA-SYSTEM",
+"DIAGRAM_VER": "v.2",
+"DIAGRAM_TITLE": "Voice Recognition System Context"
+}
+
+' Date 10.04.2026
+!include https://gitlab.int.e-kama.com/open/architecture/dcp/sw-architecture/-/raw/master/settings/sm.puml
+!include <C4/C4_Container>
+
+left to right direction
+
+System(VA, "SS309", "Voice Recognition")
+System_Ext(AVAS, "SS204", "Acoustic Vehicle Alert System")
+System_Ext(BTS, "SS109", "Body Temperature System")
+System_Ext(LCS, "SS102", "Light Control System")
+System(APPS, "SS305", "App Store")
+System_Ext(LOCK, "SS105", "Locking System")
+System_Ext(HUD, "SS311", "HUD System")
+System(SET, "SS307", "Settings System")
+System(MEDIA, "SS306", "Media System")
+System_Ext(AC, "SS410", "AC Control System")
+System(NAV, "SS308", "Navigation System")
+System_Ext(SWP, "SWP", "Steering Wheel Panel")
+System_Ext(WL, "SS107", "Window Lifter System")
+System(PB, "SS303", "Phone System")
+System(CON, "SS302", "Connectivity System")
+System(IVI, "SS301", "IVI Context System")
+System(IVI2, "SS310", "IVI")
+
+VA -up-> LCS: user command
+VA <-- LCS: Execute State
+
+VA -up--> NAV: Execute State
+NAV <- VA: user command
+
+VA -left-> BTS: user command
+BTS ---> VA: Execute State
+
+VA -up-> APPS: user command
+VA <-- APPS: Execute State
+
+VA -left-> AVAS: user command
+AVAS ---> VA: Execute State
+
+VA ---> LOCK: user command
+VA <-- LOCK: Execute State
+
+VA ---> HUD: user command
+VA <--- HUD: Execute State
+
+VA --> WL: user command
+VA <--- WL: Execute State
+
+VA --> PB: user command
+VA <--- PB: Execute State
+
+VA -down-> CON: user command
+VA <-- CON: Execute State
+
+SET --> VA: Execute State
+SET <--- VA: user command
+
+MEDIA ---> VA: Execute State
+MEDIA <-- VA: user command
+
+AC ---> VA: Execute State
+AC <--- VA: user command
+
+VA -down-> SWP: Touch
+SWP ---> VA: Feedback
+
+IVI --> VA: Execute State
+IVI <--- VA: user command
+
+IVI2 <-- VA: Switch ON the voice indicator
+
+legend left
+|=             |=|
+|<#gray> | <color:black> The External system out of IVI SoC.|
+|<#1168BD> | <color:black> The system on the IVI SoC.|
+end legend

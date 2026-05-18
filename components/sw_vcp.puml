@@ -1,9 +1,11 @@
 @startuml
 
-participant VCP [
-=IVI_VCP
-----
-""MCU ASIL-B""
-]
+$addGroup( "sw_vcp", "Common" )
+$addActor( "sw_vcp", "participant", "IVI_VCP", "Safety MCU ASIL-B", "system" )
+
+!if ( $CONFIG.SHOW_COMP == true )
+  note across: <b>Include Command:</b> <i>!include</i> <i>$</i><i>URL_BASE/components/sw_vcp.puml</i>
+  note across #lightblue: **SW VCP Components**:\n\t\n**Note:** $COMP_NOTE\n\t\n$getActorList( "sw_vcp" )
+!endif
 
 @enduml

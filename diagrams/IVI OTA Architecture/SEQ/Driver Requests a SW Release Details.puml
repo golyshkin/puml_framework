@@ -1,0 +1,57 @@
+!$CONFIG = {
+"HELP": false,
+"AUTHOR": "Aleksandr.Golyshkin@atom.team",
+"DIAGRAM_ID": "IVI-OTA-SEQ",
+"DIAGRAM_VER": "v.3",
+"DIAGRAM_TITLE": "Driver Requests a SW Release Details."
+}
+
+!include https://gitlab.int.e-kama.com/open/architecture/dcp/sw-architecture/-/raw/master/settings/seq.puml
+!include $URL_BASE/components/generic.puml
+!include $URL_BASE/components/sw_ift.puml
+!include $URL_BASE/components/external.puml
+
+ref over Driver, SGW: [["#IVIOTAUserInteractionArchitecture-NewOTAUpdateAvailable" New OTA Update Available]]
+
+note right of Driver
+**Pre-condition**:
+\t
+One of dialogs below is active:
+\t
+#<<Support_OTA_NotificationCenterScroll>>
+# <<Support_OTA_SettingsList>>
+# <<support.ota.update_available.information>>
+end note
+
+Driver o-> IFT_UPD_APP ++ : Push <<Software Update>>
+alt vehicle/{VIN}/upgrade/display/updateAvailable = true
+ref over IFT_UPD_APP, SGW: [["#IVIOTAUserInteractionArchitecture-OTAWhatsNew" OTA Whats New]]
+
+autonumber 2.1 "#.#"
+|||
+Driver o-> IFT_UPD_APP ++: Press <<Update>>/<<Next>>
+IFT_UPD_APP --> IFT_MBS **: create
+IFT_UPD_APP -> IFT_MBS ++: getPrndStatus()
+IFT_MBS --> IFT_UPD_APP --: VCU_ActualGear
+opt VCU_ActualGear != P (0x1)
+note over IFT_UPD_APP: IVI displays the **support.ota.start_update_from_nrd_gears.toast** pop-up when user confirms the SW update and vehicle gearbox not in parking mode
+IFT_UPD_APP -> IFT_UPD_APP : Display <<support.ota.start_update_from_nrd_gears.toast>>
+|||
+else else
+IFT_UPD_APP -> SGW --++: vehicle/{VIN}/upgrade/display/userAction( USER_ACTION_ACCEPT )
+|||
+end opt
+
+SGW -> SGW: onUserUpdateNext()
+SGW -> IFT_UPD_APP ++: vehicle/{VIN}/upgrade/display/updateConfirmation( leaveVehicleMin, updateEstimateTotalMin )
+IFT_UPD_APP -> IFT_UPD_APP : Display <<Support_OTA_UpdateConfirmation>>
+|||
+else else
+note across
+Actually OTA was completed, but old OTA notifications are still available for user.
+end note
+IFT_UPD_APP -> SGW ++ : vehicle/{VIN}/upgrade/display/currentVersion
+return vehicle/{VIN}/upgrade/display/currentVersion( vehicleSwVersion )
+IFT_UPD_APP -> IFT_UPD_APP --: Display <<Support_OTA_UpdateNotRequired>>
+|||
+end alt

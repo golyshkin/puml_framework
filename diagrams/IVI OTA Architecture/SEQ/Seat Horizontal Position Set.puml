@@ -1,0 +1,90 @@
+!$CONFIG = {
+"HELP": false,
+"SHOW_COMP": false,
+"AUTHOR": "Alexandr.Golyshkin@atom.team",
+"DIAGRAM_ID": "IVI-VIG-BODY-SEQ",
+"DIAGRAM_VER": "v.3",
+"DIAGRAM_TITLE": "Seat Horizontal Position Set"
+}
+
+' Date 15.04.2026
+!include https://gitlab.int.e-kama.com/open/architecture/dcp/sw-architecture/-/raw/master/settings/seq.puml
+!include $URL_BASE/components/generic.puml
+!include $URL_BASE/components/sw_ift.puml
+'!include $URL_BASE/components/sw_sfi.puml
+'!include $URL_BASE/components/sw_vcp.puml
+
+User o-> IFT_VA_APP ++: Say key wake-up word
+IFT_VA_APP -> IFT_VA_APP : onWakeup
+IFT_VA_APP -> IFT_VA_APP --: onStartListen
+
+User o-> IFT_VA_APP ++: Say set seat moving phrase
+IFT_VA_APP -> IFT_VA_APP ++: onParse
+note right IFT_VA_APP
+**Data:**
+\t
+"commandId": <unique id>,
+"commandSubject": "SEATS",
+"commandName": "setSeatHorizontalPosition",
+"speakerPosition": "FrontLeft",
+"seatZones": [ "FrontLeft", "FrontRight", "RearLeft", "RearRight" ],
+"seatMoveDirection": "Forward | Backward",
+"relativeAdjustment": "IncreaseExactly",
+"numericValueUnit": "Percent",
+"numericValue": <numericValue>
+end note
+IFT_VA_APP -> IFT_VIG_SRV --++: auto.atom.action.voice.BODY
+deactivate IFT_VA_APP
+IFT_VIG_SRV -> IFT_VIG_SRV ++: handleCommand()
+IFT_VIG_SRV -> IFT_VIG_SRV --: checkUserPermission( speakerPosition ): true
+note over IFT_VIG_SRV
+  Used response signals for get current seats position.
+end note
+
+IFT_VIG_SRV -> IFT_VIG_SRV: getCurrentHorizontalPosition: oldHorPosition
+
+alt seatZones contains "FrontLeft"
+|||
+  note over IFT_VIG_SRV
+  User values (cm, degrees, level, etc) are converted to system values (percent).
+  end note
+  alt seatMoveDirection contains "Forward"
+    IFT_VIG_SRV -> IFT_VIG_SRV: calculateNewHorizontalPosition( numericValue ) : newHorPosition = oldHorPosition - numericValue
+  else seatMoveDirection contains "Backward"
+    IFT_VIG_SRV -> IFT_VIG_SRV: calculateNewHorizontalPosition( numericValue ) : newHorPosition = oldHorPosition + numericValue
+  end alt
+  IFT_VIG_SRV -> IFT_SYNC_SRV ++: setFrontLeftSeatHorizontalPosition( newHorPosition )
+  IFT_SYNC_SRV -> IFT_SYNC_SRV: setFrontLeftSeatHorizontalPosition( newHorPosition )
+  IFT_SYNC_SRV --> IFT_VIG_SRV --: RESULT_SUCCESS
+  ...
+  ==Command Executing==
+  ...
+  IFT_SYNC_SRV o-> IFT_VIG_SRV --: onSsetFrontLeftSeatHorizontalPositionChanged( newHorPosition, status)
+  |||
+end alt
+
+note right IFT_VA_APP
+**Data:**
+\t
+"commandId": "<unique id>",
+"code": "RESULT_SUCCESS"
+{
+..."old":
+...{
+......"seatZones": [ "FrontLeft" ],
+......"numericValueUnit": "Percent",
+......"numericValue": <oldHorPosition>
+...}
+...new":
+...{
+......"seatZones": [ "FrontLeft" ],
+......"numericValueUnit": "Percent",
+......"numericValue": <newHorPosition>
+...}
+}   
+end note
+
+IFT_VIG_SRV --> IFT_VA_APP--++: auto.atom.action.voice.RESULT
+deactivate IFT_VIG_SRV
+IFT_VA_APP -> IFT_VA_APP ++: onReceive()
+IFT_VA_APP -> IFT_VA_APP: Play Command Result

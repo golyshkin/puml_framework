@@ -2,12 +2,15 @@
 
 !$DIAGRAM_TYPE = "SEQ"
 
-!include https://raw.githubusercontent.com/golyshkin/puml_framework/refs/heads/main/settings/common.puml
+!include https://gitlab.int.e-kama.com/open/architecture/dcp/sw-architecture/-/raw/master/settings/common.puml
 
 'Configuration'
 autonumber 1.1 "#.#"
 skinparam SequenceMessagePadding 2
 skinparam roundcorner 10
-!pragma teoz false
+
+!if ( $CONFIG.TEOZ == true )
+   !pragma teoz true
+!endif
 
 @enduml

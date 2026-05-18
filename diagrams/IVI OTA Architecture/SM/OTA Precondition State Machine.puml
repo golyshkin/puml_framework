@@ -1,0 +1,65 @@
+@startuml
+!$CONFIG = {
+"HELP": false,
+"SHOW_COMP": false,
+"TEOZ": true,
+"AUTHOR": "Aleksandr.Golyshkin@atom.team",
+"DIAGRAM_ID": "IVI-OTA-SM",
+"DIAGRAM_VER": "v.2",
+"DIAGRAM_TITLE": "OTA Precondition State Machine"
+}
+
+skinparam defaultTextAlignment left
+
+' Date 10.04.2026
+!include https://gitlab.int.e-kama.com/open/architecture/dcp/sw-architecture/-/raw/master/settings/sm.puml
+
+state ERROR #orange
+state END <<end>>
+
+CONFIRM: **Entry:**
+CONFIRM: # Display **Support_OTA_UpdateConfirmation** dialog
+CONFIRM: # Stop Precondition Check
+CONFIRM:
+CONFIRM: **Exit:**
+CONFIRM: # Start Precondition Check on User Update Press
+CONFIRM: # Exit on User Postpone Press
+
+PRECONDITION: **Entry:**
+PRECONDITION: # Display **Support_OTA_PreconditionList** dialog
+PRECONDITION: # Continue Precondition Check
+
+TIMER: **Entry:**
+TIMER: # Display **Support_OTA_Timer** Dialog
+TIMER: # Start Timer
+TIMER: # Continue Precondition Check
+TIMER: 
+TIMER: **Exit:**
+TIMER: # Stop Timer
+
+TIME_OVER: **Entry:**
+TIME_OVER: # Display **Support_OTA_TimerIsOver** dialog
+TIME_OVER: # Continue Precondition Check
+
+ERROR: Display **Support_OTA_PreconditionCheckError** pop-up
+
+[*] -down-> CONFIRM : USER_ACTION_ACCEPT
+CONFIRM --> TIMER: No Preconditions
+CONFIRM --> PRECONDITION: Preconditions
+CONFIRM -> ERROR: Precondition Check Error
+
+PRECONDITION --> CONFIRM : Back Button
+PRECONDITION --> PRECONDITION : Preconditions
+PRECONDITION --> TIMER : No Preconditions
+
+TIMER --> TIME_OVER: People Inside
+TIMER -> PRECONDITION: Preconditions
+TIMER --> ERROR: Precondition Check Error
+TIMER -> END: No Preconditions
+
+TIME_OVER -> PRECONDITION: Preconditions
+TIME_OVER --> END: No Preconditions
+
+ERROR -> END: Exit
+note bottom of END: Exit OTA Application or Start Flashing Dialog.
+@enduml

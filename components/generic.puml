@@ -1,14 +1,16 @@
 @startuml
 
-' Start Generic Compoenets Definition
+$addActor( "generic", "actor", "User",   "User Actor", "none", -10 )
+$addActor( "generic", "actor", "System", "System Actor", "none", -10 )
+$addActor( "generic", "actor", "Driver", "Vehicle Driver", "none", -10 )
+$addActor( "generic", "participant", "ANY_APP", "Any Application", "app" )
+$addActor( "generic", "participant", "ANY_SRV", "Any Service", "service" )
+$addActor( "generic", "database", "DB", "Database", "none" )
+$addActor( "generic", "database", "FS", "File System", "none" )
 
-$addActor( "generic", "actor", "User", "User Actor" )
-$addActor( "generic", "actor", "System", "System Actor" )
-
-' End Generic Compoenets Definition
-
-!if ( $CONFIG.HELP == true )
-	note across #lightgreen: **Defined Generic Actors**:\n\t\n**Note:** $COMP_NOTE\n\t\n$getActorList( "generic" )
+!if ( $CONFIG.SHOW_COMP == true )
+   note across: <b>Include Command:</b> <i>!include</i> <i>$</i><i>URL_BASE/components/generic.puml</i>
+	note across #lightgreen: **Generic Actors**:\n\t\n**Note:** $COMP_NOTE\n\t\n$getActorList( "generic" )
 !endif
 
 @enduml

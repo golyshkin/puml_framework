@@ -1,0 +1,37 @@
+!$CONFIG = {
+"HELP": false,
+"SHOW_COMP": false,
+"TEOZ": false,
+"AUTHOR": "Alexandr.Golyshkin@atom.team",
+"DIAGRAM_ID": "IVI-OTA-SEQ",
+"DIAGRAM_VER": "v.4",
+"DIAGRAM_TITLE": "IVI Exit from Service Mode by IFT Request"
+}
+
+!include https://gitlab.int.e-kama.com/open/architecture/dcp/sw-architecture/-/raw/master/settings/seq.puml
+!include $URL_BASE/components/external.puml
+!include $URL_BASE/components/sw_ift.puml
+!include $URL_BASE/components/sw_sfi.puml
+!include $URL_BASE/components/sw_vcp.puml
+'!include $URL_BASE/components/generic.puml
+
+==IVI_IVI_IFT UDS Extended Diagnostic Session is established==
+SGW -> IVI_IFT ++: Communication Control (0x28)\n[0x00 0x03 - Enable Communication]
+activate SGW
+IVI_IFT -> IVI_IFT ++: onCommunicationControl()
+IVI_IFT -> IVI_IFT ++: onRunMode()
+IVI_IFT ->> IVI_SFI --++: ATOM_REGISTER_IVI_IFT_STATE( RUN )
+deactivate IVI_IFT
+deactivate IVI_IFT
+
+IVI_SFI -> IVI_SFI ++: onRunMode()
+IVI_SFI -> IVI_SFI: getCurrentState() : current_state
+note over IVI_SFI: Request to start IVI_SFI heartbeats monitor on IVI_VCP side
+IVI_SFI ->> IVI_VCP --++: SYSTEM_SCP_CTRL_AP_UPDATE_END
+IVI_VCP -> IVI_VCP --: startSfiSafetyCheck()
+
+opt current_state = SERVICE
+IVI_SFI ->> IVI_VCP --++: SYSTEM_SCP_CTRL_SOC_RESET_REQ( 0 )
+IVI_VCP -> IVI_VCP --: Reset CPU Cores
+|||
+end opt

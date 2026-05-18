@@ -1,0 +1,135 @@
+!$CONFIG = {
+"AUTHOR": "Alexandr.Golyshkin@atom.team",
+"DIAGRAM_ID": "IVI-VIG-BODY-SEQ",
+"DIAGRAM_VER": "v.2",
+"DIAGRAM_TITLE": "Toggle Child Lock"
+}
+
+!include https://gitlab.int.e-kama.com/open/architecture/dcp/sw-architecture/-/raw/master/settings/seq.puml
+!include $URL_BASE/components/generic.puml
+'!include $URL_BASE/components/external.puml
+'!include $URL_BASE/components/sw_vcp.puml
+'!include $URL_BASE/components/sw_sfi.puml
+!include $URL_BASE/components/sw_ift.puml
+
+User o-> IFT_VA_APP ++: Say key wake-up word
+IFT_VA_APP -> IFT_VA_APP : onWakeup
+IFT_VA_APP -> IFT_VA_APP --: onStartListen
+
+User o-> IFT_VA_APP ++: Say child lock phrase
+IFT_VA_APP -> IFT_VA_APP ++: onParse
+note right IFT_VA_APP
+**Data:**
+\t
+<code>
+"commandId": <unique id>,
+"commandSubject": "DOORS",
+"commandName": "toggleChildLock ",
+"speakerPosition": "FrontLeft | FrontRight | Rear",
+"doorZones": [ "FrontLeft", "FrontRight", "RearLeft", "RearRight", "Trunk", "ChargingHatch" ],
+"enabled": true
+</code>
+end note
+IFT_VA_APP -> IFT_VIG_SRV --++: auto.atom.action.voice.BODY
+deactivate IFT_VA_APP
+IFT_VIG_SRV -> IFT_VIG_SRV ++: handleCommand()
+==Initial State==
+autonumber inc A
+IFT_VIG_SRV -> IFT_VIG_SRV : getChildLockMode(): childLockMode
+IFT_VIG_SRV -> IFT_VIG_SRV : getChildLockState(): childLockState
+
+==Guard Conditions==
+autonumber inc A
+IFT_VIG_SRV -> IFT_VIG_SRV : checkUserPermission( speakerPosition ): isPermissionAvailable
+opt isPermissionAvailable = false
+  IFT_VIG_SRV --> IFT_VA_APP ++: RESULT_DRIVER_ACCESS_ONLY
+end opt
+
+opt enabled = true AND childLockState = true
+  IFT_VIG_SRV --> IFT_VA_APP: RESULT_NOTHING_TO_CHANGE
+end opt 
+
+opt doorZones NOT [RearLeft, RearRight]
+  IFT_VIG_SRV --> IFT_VA_APP: RESULT_ERROR_VALUE
+end opt 
+
+opt ( doorZones = RearLeft AND childLockMode = PASSENGER_SIDE ) OR ( doorZones = RearRight AND childLockMode = DRIVER_SIDE )
+  note right IFT_VA_APP
+  **Data:**
+  \t
+  <code>
+  "commandId": "<unique id>",
+  "code": "RESULT_ERROR_CHILDLOCK_SETTINGS"
+  "data":
+  {
+    "enabled": false,
+    "doorZones": [ "RearLeft", "RearRight" ]    
+  }
+  </code>
+  end note  
+  IFT_VIG_SRV --> IFT_VA_APP: RESULT_ERROR_CHILDLOCK_SETTINGS
+end opt 
+
+==Command Executing==
+autonumber inc A
+IFT_VIG_SRV -> IFT_SYNC_SRV ++: switchChildLock( true )
+IFT_SYNC_SRV -> IFT_SYNC_SRV: executeCommand()
+
+alt Command start executing
+  IFT_SYNC_SRV --> IFT_VIG_SRV: RESULT_SUCCESS
+  IFT_VIG_SRV -> IFT_VIG_SRV: waitCommandResponse()
+else Command is not supported
+  IFT_SYNC_SRV --> IFT_VIG_SRV: RESULT_NOT_SUPPORTED
+  IFT_VIG_SRV --> IFT_VA_APP: RESULT_NOT_SUPPORTED
+else Command has error
+  IFT_SYNC_SRV --> IFT_VIG_SRV --: RESULT_FAILURE
+  IFT_VIG_SRV --> IFT_VA_APP: RESULT_FAILURE
+end alt
+...
+IFT_SYNC_SRV o-> IFT_VIG_SRV: onSwitchDoorsChildLockChanged( isLock, seatSide, status )
+alt status = RESULT_SUCCESS
+  alt ( seatSide = Rear_Left AND childLockMode = BOTH_SIDE ) OR ( seatSide = Rear_Right AND childLockMode = BOTH_SIDE )
+    note right IFT_VA_APP
+    **Data:**
+    \t
+    <code>
+    "commandId": "<unique id>",
+    "code": "RESULT_SUCCESS_LIMITED"
+    "data":
+    {
+      "enabled": true,
+      "doorZones": [ ${seatSide} ]
+    }
+    </code>
+    end note
+    IFT_VIG_SRV --> IFT_VA_APP: RESULT_SUCCESS_LIMITED
+  else else
+    note right IFT_VA_APP
+    **Data:**
+    \t
+    <code>
+    "commandId": "<unique id>",
+    "code": "RESULT_SUCCESS"
+    "data":
+    {
+      "enabled": true
+    }
+    </code>
+    end note
+    IFT_VIG_SRV --> IFT_VA_APP: RESULT_SUCCESS
+  end alt
+else status = [RESULT_TIMEOUT, RESULT_FAILURE]
+    note right IFT_VA_APP
+    **Data:**
+    \t
+    <code>
+    "commandId": "<unique id>",
+    "code": "RESULT_ERROR_EXECUTION"
+    "data": null
+    </code>
+    end note
+  IFT_VIG_SRV --> IFT_VA_APP: RESULT_ERROR_EXECUTION
+end alt
+deactivate IFT_VIG_SRV
+IFT_VA_APP -> IFT_VA_APP ++: onReceive()
+IFT_VA_APP -> IFT_VA_APP: Play Command Result

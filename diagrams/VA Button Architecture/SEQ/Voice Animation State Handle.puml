@@ -1,0 +1,58 @@
+!$CONFIG = {
+"AUTHOR": "Alexandr.Golyshkin@atom.team",
+"DIAGRAM_ID": "IVI-VAB-SEQ",
+"DIAGRAM_VER": "v.1",
+"DIAGRAM_TITLE": "Voice Animation State Handle"
+}
+
+!include https://gitlab.int.e-kama.com/open/architecture/dcp/sw-architecture/-/raw/master/settings/seq.puml
+!include $URL_BASE/components/generic.puml
+'!include $URL_BASE/components/external.puml
+'!include $URL_BASE/components/sw_vcp.puml
+'!include $URL_BASE/components/sw_sfi.puml
+!include $URL_BASE/components/sw_ift.puml
+
+System o->>  IFT_VA_APP ++: request
+IFT_VA_APP ->  IFT_VA_APP: process()
+IFT_VA_APP -> IFT_VIG_SRV --++: onStateChanged( state )
+IFT_VIG_SRV ->> IFT_VIG_SRV: setState( state )
+IFT_VIG_SRV ->> IFT_VIG_SRV ++: setvabState( state )
+
+opt state = IDLE
+   IFT_VIG_SRV -> IFT_VAB++: onVabStateChanged( IDLE )
+   note right IFT_VIG_SRV: Notify roof console about VAB state
+   IFT_VIG_SRV -> IFT_MQTT: vehicle/{VIN}/hardware/entertainment/voiceAssistantState = Inactive
+   IFT_VAB ->> IFT_VAB ++: onVoiceStateChanged()
+   IFT_VAB -> IFT_VAB --: showVoiceButton( IDLE )
+   deactivate IFT_VAB
+   |||
+else state = LISTEN or state = COMPLETE
+   IFT_VIG_SRV -> IFT_VAB ++: onVabStateChanged( ACTIVE )
+   note right IFT_VIG_SRV: Notify roof console about VAB state
+   IFT_VIG_SRV -> IFT_MQTT: vehicle/{VIN}/hardware/entertainment/voiceAssistantState = Active
+   IFT_VAB ->> IFT_VAB ++: onVoiceStateChanged()
+   IFT_VAB -> IFT_VAB --: showVoiceButton( ACTIVE )
+   deactivate IFT_VAB
+   |||
+else state = EXPECT or state = THINK or state = SPEAK
+   IFT_VIG_SRV -> IFT_VAB ++: onVabStateChanged( COMMAND )
+   note right IFT_VIG_SRV: Notify roof console about VAB state
+   IFT_VIG_SRV -> IFT_MQTT: vehicle/{VIN}/hardware/entertainment/voiceAssistantState = Active
+   IFT_VAB ->> IFT_VAB ++: onStateChanged()
+   IFT_VAB -> IFT_VAB --: showVoiceButton( COMMAND )
+   deactivate IFT_VAB
+   |||
+else state = OFF
+   IFT_VIG_SRV -> IFT_VAB --++: onVabStateChanged( OFF )
+   note right IFT_VIG_SRV: Notify roof console about VAB state
+   IFT_VIG_SRV -> IFT_MQTT: vehicle/{VIN}/hardware/entertainment/voiceAssistantState = Inactive
+   deactivate IFT_VIG_SRV
+   IFT_VAB ->> IFT_VAB ++: onVoiceStateChanged()
+   IFT_VAB -> IFT_VAB --: hideVoiceButton()
+   deactivate IFT_VAB
+   |||
+else state = ERROR
+  |||
+  ref over IFT_VIG_SRV, IFT_MQTT: [[https://confluence.e-kama.com/pages/viewpage.action?pageId=170937693#VoiceInteractionGatewayArchitecture-VAErrorHandle VA Error Handle]]
+  |||
+end opt

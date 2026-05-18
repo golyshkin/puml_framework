@@ -1,0 +1,53 @@
+!$CONFIG = {
+"HELP": false,
+"SHOW_COMP": false,
+"TEOZ": false,
+"AUTHOR": "Alexandr.Golyshkin@atom.team",
+"DIAGRAM_ID": "IVI-OTA-SEQ",
+"DIAGRAM_VER": "v.2",
+"DIAGRAM_TITLE": "Vehicle OPERATIONAL Mode Handle"
+}
+
+!include https://gitlab.int.e-kama.com/open/architecture/dcp/sw-architecture/-/raw/master/settings/seq.puml
+!include $URL_BASE/components/external.puml
+!include $URL_BASE/components/sw_vcp.puml
+!include $URL_BASE/components/sw_sfi.puml
+!include $URL_BASE/components/sw_ift.puml
+'!include $URL_BASE/components/generic.puml
+
+note across
+The system notifies an all ECUs about OTA update completed and vehicle is moved to NORMAL operable state.
+end note
+SGW -> CGW ++: IVI_VehicleModeSts( 0x0 )
+activate SGW
+CGW -> IVI_VCP --++: IVI_VehicleModeSts( 0x0 )
+IVI_VCP -> IVI_VCP ++: onOtaCustomerMode()
+note over IVI_VCP
+IVI_VCP enables CAN faults checking and sending DTC codes related to external network.
+end note
+IVI_VCP -> IVI_VCP : enableCanHealth()
+IVI_VCP -> IVI_VCP --: enableDtcCodes()
+IVI_VCP -> IVI_SFI --++: IVI_VehicleModeSts( 0x0 )
+IVI_SFI -> IVI_SFI ++: onOtaCustomerMode()
+note over IVI_SFI
+IVI_SFI monitors SWP ECU, so enable following
+\t
+# SWP Health Check
+# SWP DTC codes
+end note
+IVI_SFI -> IVI_SFI --: enableSwpHealthCheck()
+IVI_SFI -> IVI_SFI --: enableSwpDtcCodes()
+deactivate IVI_SFI
+SGW -> IVI_IFT ++: vehicle/{VIN}/diagnostics/vehicleMode/customerModeState( OPERATIONAL_MODE )
+note over IVI_IFT
+IVI_IFT enables MQTT faults checking and sending DTC codes related to external network.
+end note
+IVI_IFT -> IVI_IFT ++: onOtaCustomerMode()
+IVI_IFT -> IVI_IFT : enableDtcCodes()
+IVI_IFT -> IVI_IFT --: <del>enableMqttHealth()</del>
+SGW -> IFT_UPD_APP --++: vehicle/{VIN}/diagnostics/vehicleMode/customerModeState( OPERATIONAL_MODE )
+IFT_UPD_APP -> IFT_UPD_APP: getActiveView(): activeOtaView
+opt activeOtaView = <<Support_OTA_SystemRebootStart>>
+IFT_UPD_APP -> IFT_UPD_APP !!: Exit
+|||
+end opt

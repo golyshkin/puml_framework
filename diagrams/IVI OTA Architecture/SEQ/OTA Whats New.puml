@@ -1,0 +1,37 @@
+!$CONFIG = {
+"HELP": false,
+"SHOW_COMP": false,
+"AUTHOR": "Aleksandr.Golyshkin@atom.team",
+"DIAGRAM_ID": "IVI-OTA-SEQ",
+"DIAGRAM_VER": "v.4",
+"DIAGRAM_TITLE": "OTA Whats New"
+}
+
+' Date 10.04.2026
+!include https://gitlab.int.e-kama.com/open/architecture/dcp/sw-architecture/-/raw/master/settings/seq.puml
+
+!include $URL_BASE/components/generic.puml
+!include $URL_BASE/components/sw_ift.puml
+!include $URL_BASE/components/external.puml
+
+ref over User, SGW: [["#IVIOTAUserInteractionArchitecture-NewOTAUpdateAvailable" New OTA Update Available]]
+User o-> IFT_NTF_APP ++: Activates the OTA by touch on notification/event 
+IFT_NTF_APP --> IFT_UPD_APP **: create
+deactivate IFT_NTF_APP
+IFT_UPD_APP -> SGW ++ : vehicle/{VIN}/upgrade/display/updateAvailable
+activate IFT_UPD_APP
+return updateAvailable
+IFT_UPD_APP -> SGW ++: vehicle/{VIN}/upgrade/display/releaseNote
+note left SGW: JSON content to display.
+return releaseNote
+
+IFT_UPD_APP -> IFT_UPD_APP: checkJsonContent( releaseNote, releaseNoteScheme ): isJsonContentOk
+alt isJsonContentOk = false
+  note right IFT_UPD_APP
+  Display centered warning content:
+
+  <<Invalid Release Notes Content Detected>>
+  end note
+  IFT_UPD_APP -> IFT_UPD_APP: setWarningContent()
+end alt
+IFT_UPD_APP -> IFT_UPD_APP --: Display <<Support_OTA_WhatsNew>>

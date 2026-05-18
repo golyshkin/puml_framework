@@ -2,7 +2,7 @@
 
 !$DIAGRAM_TYPE = "SM"
 
-!include https://raw.githubusercontent.com/golyshkin/puml_framework/refs/heads/main/settings/common.puml
+!include https://gitlab.int.e-kama.com/open/architecture/dcp/sw-architecture/-/raw/master/settings/common.puml
 
 'Configuration'
 skinparam linetype ortho

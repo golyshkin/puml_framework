@@ -1,0 +1,90 @@
+!$CONFIG = {
+"HELP": false,
+"SHOW_COMP": false,
+"TEOZ": false,
+"AUTHOR": "Alexandr.Golyshkin@atom.team",
+"DIAGRAM_ID": "IVI-OTA-SEQ",
+"DIAGRAM_VER": "v.4",
+"DIAGRAM_TITLE": "IVI Enter to Service Mode by IFT Request"
+}
+
+!include https://gitlab.int.e-kama.com/open/architecture/dcp/sw-architecture/-/raw/master/settings/seq.puml
+!include $URL_BASE/components/external.puml
+!include $URL_BASE/components/sw_ift.puml
+!include $URL_BASE/components/sw_sfi.puml
+'!include $URL_BASE/components/generic.puml
+!include $URL_BASE/components/sw_vcp.puml
+
+==IVI_IFT UDS Extended Diagnostic Session is established==
+SGW -> IVI_IFT ++: Communication Control (0x28)\n[0x03 0x03 - Disable Non Diagnostic Communication]
+activate SGW
+IVI_IFT -> IVI_IFT ++: onCommunicationControl()
+IVI_IFT -> IVI_IFT ++: onServiceMode()
+note over IVI_IFT
+Stop sending and handle non-diagnostic data
+end note
+IVI_IFT -> IVI_IFT: stopNonDiagnosticCommunication()
+note over IVI_IFT
+  Stops set DTC.
+end note
+IVI_IFT -> IVI_IFT: stopDtcTxProcessing()
+note over IVI_IFT
+  Stop safety mechaisms for ran applications
+end note
+IVI_IFT -> IVI_IFT: stopIftSafetyCheck()
+note over IVI_IFT: IVI_IFT stops checking IVI_SFI heartbeats
+IVI_IFT -> IVI_IFT : stopSfiSafetyCheck()
+
+IVI_IFT ->> IVI_SFI --++: ATOM_REGISTER_IFT_STATE( SERVICE )
+deactivate IVI_IFT
+deactivate IVI_IFT
+
+IVI_SFI -> IVI_SFI ++: onServiceMode()
+note over IVI_SFI
+  Stops set DTC.
+end note
+IVI_SFI -> IVI_SFI : stopDtcTxProcessing()
+note over IVI_SFI
+  # SFI stops checking IFT heartbeats
+  # SFI stops sending heartbeats to IFT
+end note
+IVI_SFI -> IVI_SFI : stopIftSafetyCheck()
+IVI_SFI ->> IVI_VCP --++: SYSTEM_SCP_CTRL_AP_UPDATE_START
+deactivate IVI_SFI
+IVI_VCP -> IVI_VCP ++: onServiceMode()
+note over IVI_VCP
+  IVI_VCP moves to service mode.
+end note
+IVI_VCP -> IVI_VCP : setSocState( SERVICE )
+note over IVI_VCP
+  IVI_VCP stops checking IVI_SFI heartbeats and other safety mechanisms.
+end note
+IVI_VCP -> IVI_VCP : stopSfiSafetyCheck()
+IVI_VCP ->> IVI_SFI ++: SYSTEM_SCP_CTRL_STATE_MACHINE_MODE( state_mode )
+deactivate IVI_VCP
+deactivate IVI_VCP
+note over IVI_SFI: IVI_SFI Stop sending a heartbeats to IVI_VCP.
+IVI_SFI -> IVI_SFI ++: onStopVcpSafetyCheck()
+IVI_SFI -> IVI_SFI : ssm_heartbeat_stop()
+IVI_SFI -> IVI_SFI : logServiceState()
+IVI_SFI ->> IVI_IFT ++: ATOM_REGISTER_VCP_STATE( state_mode )
+deactivate IVI_SFI
+deactivate IVI_SFI
+IVI_IFT -> IVI_IFT ++: onStopSfiSafetyCheck()
+note over IVI_IFT
+Stop sending a heartbeats to IVI_SFI
+end note
+IVI_IFT -> IVI_IFT: ift_heartbeat_stop()
+IVI_IFT -> IVI_IFT: logServiceState()
+alt state_mode is SERVICE
+ IVI_IFT --> SGW : UDS PositiveResponse
+ |||
+else else
+ note over IVI_IFT: Restore previouse IVI_IFT state, since not all domains were moved to SERVICE mode
+ IVI_IFT -> IVI_IFT : RestoreIftState()
+ IVI_IFT --> SGW --: UDS NegativeResponse
+ |||
+end alt
+
+deactivate IVI_IFT
+deactivate SGW

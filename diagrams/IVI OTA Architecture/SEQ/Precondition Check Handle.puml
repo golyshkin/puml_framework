@@ -1,0 +1,59 @@
+!$CONFIG = {
+"HELP": false,
+"AUTHOR": "Aleksandr.Golyshkin@atom.team",
+"DIAGRAM_ID": "IVI-OTA-SEQ",
+"DIAGRAM_VER": "v.6",
+"DIAGRAM_TITLE": "Precondition Check Handle"
+}
+
+' Chnaged 13.04.
+!include https://gitlab.int.e-kama.com/open/architecture/dcp/sw-architecture/-/raw/master/settings/seq.puml
+
+participant SGW <<system>> order -1 [
+=SGW
+----
+""Secure Gateway""
+]
+
+!include $URL_BASE/components/generic.puml
+!include $URL_BASE/components/sw_ift.puml
+!include $URL_BASE/components/external.puml
+
+ref over Driver, IFT_UPD_APP: [["#IVIOTAUserInteractionArchitecture-DriverStartstheSWUpdate" Driver Starts the SW Update]]
+
+== <<Support_OTA_PreconditionList>> is Active ==
+note right SGW: Unmet SW Update preconditions are detected.
+loop each precondition change
+  SGW o-> IFT_UPD_APP ++: vehicle/{VIN}/upgrade/display/preconditionList
+  IFT_UPD_APP -> IFT_UPD_APP --: Update <<Support_OTA_PreconditionList>>
+  |||
+end loop
+note right SGW: User can stop check preconditions to avoid of displaying the <<Support_OTA_PreconditionList>> in infinity mode.
+Driver o-> IFT_UPD_APP ++ : Push <<BACK>> button
+IFT_UPD_APP -> SGW ++: vehicle/{VIN}/upgrade/display/userAction[ USER_ACTION_STOP_CHECK_PRECONDITIONS ]
+SGW -> SGW: Stop Check Preconditions
+SGW -> IFT_UPD_APP --: vehicle/{VIN}/upgrade/display/updateConfirmation
+IFT_UPD_APP -> IFT_UPD_APP --: Display <<Support_OTA_UpdateConfirmation>>
+
+== <<Support_OTA_Timer>> is Active ==
+autonumber inc A
+note right SGW: Timer started from begin.
+loop each 1 second
+  SGW o-> IFT_UPD_APP ++: vehicle/{VIN}/upgrade/display/updateTimer
+  IFT_UPD_APP -> IFT_UPD_APP --: Display <<Support_OTA_Timer>>
+  |||
+end loop 
+note right SGW: New preconditions are detected.
+SGW o-> IFT_UPD_APP ++: vehicle/{VIN}/upgrade/display/preconditionList
+IFT_UPD_APP -> IFT_UPD_APP --: Display <<Support_OTA_PreconditionList>>
+|||
+
+== <<Support_OTA_TimerIsOver>> is Active ==
+autonumber inc A
+note right SGW: Pople inside vehicle detected.
+SGW o-> IFT_UPD_APP ++: vehicle/{VIN}/upgrade/display/error[ ERROR_PEOPLE_INSIDE ]
+IFT_UPD_APP -> IFT_UPD_APP --: Display <<Support_OTA_TimerIsOver>>
+note right SGW: New preconditions are detected.
+SGW o-> IFT_UPD_APP ++: vehicle/{VIN}/upgrade/display/preconditionList
+IFT_UPD_APP -> IFT_UPD_APP --: Display <<Support_OTA_PreconditionList>>
+|||

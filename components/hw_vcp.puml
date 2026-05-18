@@ -1,0 +1,11 @@
+@startuml
+
+$addGroup( "hw_vcp", "Common" )
+$addActor( "hw_vcp", "database", "VCP_EPR", "EEPROM Flash", "database" )
+
+!if ( $CONFIG.SHOW_COMP == true )
+  note across: <b>Include Command:</b> <i>!include</i> <i>$</i><i>URL_BASE/components/hw_vcp.puml</i>
+  note across #lightblue: **SW VCP Components**:\n\t\n**Note:** $COMP_NOTE\n\t\n$getActorList( "hw_vcp" )
+!endif
+
+@enduml

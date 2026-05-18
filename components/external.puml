@@ -2,13 +2,16 @@
 
 ' Start Generic Compoenets Definition
 
+$addGroup( "external", "System" )
 $addActor( "external", "participant", "TBOX", "Telemetric Box", "system" )
 $addActor( "external", "participant", "SGW",  "Secure Gateway", "system" )
+$addActor( "external", "participant", "CGW",  "CAN Gateway",    "system" )
 
 ' End Generic Compoenets Definition
 
-!if ( $CONFIG.HELP == true )
-	note across #lightgreen: **Defined External Components**:\n\t\n**Note:** $COMP_NOTE\n\t\n$getActorList( "external" )
+!if ( $CONFIG.SHOW_COMP == true )
+   note across: <b>Include Command:</b> <i>!include</i> <i>$</i><i>URL_BASE/components/external.puml</i>
+	note across #lightblue: **External Components**:\n\t\n**Note:** $COMP_NOTE\n\t\n$getActorList( "external" )
 !endif
 
 @enduml

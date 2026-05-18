@@ -1,0 +1,12 @@
+@startuml
+
+$addGroup( "hw_ift", "Common" )
+$addActor( "hw_ift", "participant", "IVI_DSP", "Digital Signal Processor", "hw" )
+
+
+!if ( $CONFIG.SHOW_COMP == true )
+   note across: <b>Include Command:</b> <i>!include</i> <i>$</i><i>URL_BASE/components/hw_ift.puml</i>
+	note across #lightblue: **HW IFT Components**:\n\t\n**Note:** $COMP_NOTE\n\t\n$getActorList( "hw_ift" )
+!endif
+
+@enduml

@@ -1,0 +1,104 @@
+!$CONFIG = {
+"AUTHOR": "Alexandr.Golyshkin@atom.team",
+"DIAGRAM_ID": "IVI-VIG-CLIMATE-SEQ",
+"DIAGRAM_VER": "v.5",
+"DIAGRAM_TITLE": "Toggle Recirculation OFF"
+}
+
+!include https://gitlab.int.e-kama.com/open/architecture/dcp/sw-architecture/-/raw/master/settings/seq.puml
+!include $URL_BASE/components/generic.puml
+'!include $URL_BASE/components/external.puml
+'!include $URL_BASE/components/sw_vcp.puml
+'!include $URL_BASE/components/sw_sfi.puml
+!include $URL_BASE/components/sw_ift.puml
+
+note right IFT_VA_APP
+**Pre-condition:**
+\t
+IFT_VIG_SRV stored current recirculation state from IFT_SYNC_SRV.
+end note
+
+User o-> IFT_VA_APP : Say phrase from list
+activate IFT_VA_APP
+IFT_VA_APP -> IFT_VA_APP : Parse phrase
+note right of IFT_VA_APP
+**Data:**
+\t
+<code>
+"commandId": "<unique id>"
+"commandSubject": "CONDITIONER"
+"commandName": "toggleRecirculation"
+"speakerPosition": ["FrontLeft", "FrontRight", "RearLeft", "RearRight"]
+"enabled": false
+</code>
+end note
+IFT_VA_APP -> IFT_VIG_SRV : auto.atom.action.voice.CLIMATE
+activate IFT_VIG_SRV
+IFT_VIG_SRV -> IFT_VIG_SRV: handleCommand()
+alt speakerPosition = FrontLeft OR FrontRight
+IFT_VIG_SRV -> IFT_VIG_SRV: Check initial_state
+
+    alt initial_state = true
+        IFT_VIG_SRV -> IFT_SYNC_SRV ++: setRecirculation( RECIRCULATION_EXTERNAL )
+        IFT_SYNC_SRV -> IFT_SYNC_SRV: executeCommand()
+        IFT_SYNC_SRV --> IFT_VIG_SRV --: RESULT_SUCCESS
+        deactivate IFT_VIG_SRV
+==Command Executing==
+        IFT_SYNC_SRV o-> IFT_VIG_SRV ++: onSetRecirculationChanged( mode, eventStatus ) 
+        alt eventStatus = RESULT_SUCCESS
+            note right of IFT_VA_APP
+            **Result Data**
+            \t
+            <code>
+            "action": "auto.atom.action.voice.RESULT",
+            "commandId": <unique id>,
+            "code": "RESULT_SUCCESS",
+            "data":
+            {
+                "enabled": false
+            }
+            </code>
+            end note
+            IFT_VIG_SRV -> IFT_VA_APP: Result Data
+        else eventStatus = [RESULT_TIMEOUT, RESULT_FAILURE]
+            note right of IFT_VA_APP
+            **Result Data**
+            \t
+            <code>
+            "action": "auto.atom.action.voice.RESULT"
+            "commandId": <unique id>
+            "code": "RESULT_ERROR_EXECUTION"
+            "data": null
+            </code>
+            end note
+            IFT_VIG_SRV -> IFT_VA_APP: Result Data
+        end
+    else else
+        note right of IFT_VA_APP
+        **Result Data**
+        \t
+        <code>
+        "action": "auto.atom.action.voice.RESULT"
+        "commandId": <unique id>
+        "code": "RESULT_NOTHING_TO_CHANGE"
+        "data": null          
+        </code>
+        end note
+        IFT_VIG_SRV -> IFT_VA_APP: Result Data
+    end
+else speakerPosition != FrontLeft AND FrontRight
+    note right of IFT_VA_APP
+    **Result Data**
+    \t
+    <code>
+    "action": "auto.atom.action.voice.RESULT"
+    "commandId": <unique id>
+    "code": "RESULT_DRIVER_AND_PASSENGER_ACCESS_ONLY"
+    "data": null                
+    </code>
+    end note
+    IFT_VIG_SRV -> IFT_VA_APP: Result Data
+    |||
+    deactivate IFT_VA_APP
+    deactivate IFT_VIG_SRV
+end

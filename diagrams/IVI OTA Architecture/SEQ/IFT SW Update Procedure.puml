@@ -1,0 +1,143 @@
+!$CONFIG = {
+"HELP": false,
+"SHOW_COMP": false,
+"TEOZ": false,
+"AUTHOR": "Alexandr.Golyshkin@atom.team",
+"DIAGRAM_ID": "IVI-OTA-SEQ",
+"DIAGRAM_VER": "v.3",
+"DIAGRAM_TITLE": "IFT SW Update Procedure"
+}
+
+' Date 15.04.2026-
+!include https://gitlab.int.e-kama.com/open/architecture/dcp/sw-architecture/-/raw/master/settings/seq.puml
+!include $URL_BASE/components/generic.puml
+!include $URL_BASE/components/sw_ift.puml
+!include $URL_BASE/components/sw_sfi.puml
+!include $URL_BASE/components/sw_vcp.puml
+
+== UPDATE_AVAILABLE ==
+System o-> IFT_UDS_SRV ++: Trigger OTA update
+IFT_UDS_SRV -> IFT_UDS_SRV: Download SW Update
+IFT_UDS_SRV -> FS: Save SW image
+IFT_UDS_SRV -> IFT_UPD_SRV --++: Notify
+IFT_UPD_SRV -> IFT_UPD_SRV: onUpdateAvailable()
+IFT_UPD_SRV -> IFT_UPD_SRV: trimThirdPartyApplicationsForOta()
+IFT_UPD_SRV -> IFT_UPD_ENG ++: installUpdate()
+IFT_UPD_ENG -> IFT_UPD_ENG: checkPreconditions()
+IFT_UPD_ENG -> IFT_UPD_SNM ++: Create snapshots for dynamic partitions
+note over IFT_UPD_SNM: Creates current FS snapshot before apply new changes.
+IFT_UPD_SNM -> IFT_UPD_SNM --: create snapshots
+IFT_UPD_ENG --> IFT_UPD_SRV --: UPDATE_AVAILABLE
+deactivate IFT_UPD_SRV
+
+== VERIFYING ==
+autonumber inc A
+IFT_UPD_ENG o-> IFT_UPD_ENG ++: startVerifying()
+IFT_UPD_ENG -> IFT_UPD_SRV ++: VERIFYING
+IFT_UPD_SRV -> IFT_UPD_SRV --: onStatusUpdate()
+IFT_UPD_ENG -> FS ++: SW Image
+FS -> IFT_UPD_ENG --: stream data
+IFT_UPD_ENG -> IFT_UPD_VRF ++: verify()
+IFT_UPD_VRF -> IFT_UPD_VRF: Check signatures
+IFT_UPD_VRF -> IFT_UPD_VRF: Validate metadata
+IFT_UPD_VRF -> IFT_UPD_VRF: Check hash compatibility
+IFT_UPD_VRF --> IFT_UPD_ENG--: SUCCESS
+deactivate IFT_UPD_ENG
+deactivate IFT_UPD_ENG
+
+== DOWNLOADING ==
+autonumber inc A
+IFT_UPD_ENG o-> IFT_UPD_ENG ++: startPreUpdate()
+IFT_UPD_ENG -> IFT_UPD_SRV ++: DOWNLOADING
+IFT_UPD_SRV -> IFT_UPD_SRV --: onStatusUpdate()
+|||
+IFT_UPD_ENG -> IFT_UPD_ENG ++: startUpdate()
+loop streaming update for each partition
+  IFT_UPD_ENG -> FS ++: Read partition data
+  FS --> IFT_UPD_ENG --: data
+  note over IFT_UPD_ENG 
+  SW update for
+  \t
+  # Kernel
+  # Bootloaders
+  # System partition
+  # Vendor partition
+  end note
+  IFT_UPD_ENG -> IFT_UPD_ENG: ApplyUpdates( data )
+  IFT_UPD_ENG -> IFT_UPD_SRV ++: Update progress: [0..90%]
+  deactivate IFT_UPD_ENG
+  IFT_UPD_SRV -> IFT_UDS_SRV --++: Update progress [0..90%]
+  IFT_UDS_SRV ->  System --++: Update progress [0..90%]
+   System ->  System : Calculate Vehicle SW Update Status
+   System -> IFT_UPD_APP --++: vehicle/{VIN}/upgrade/display/flashingProgress
+  IFT_UPD_APP -> IFT_UPD_APP --: Display Vehicle SW Update Status
+  |||
+  ref over IFT_UPD_SRV, IFT_UPD_APP: [["https://confluence.e-kama.com/display/IVI/IVI+OTA+User+Interaction+Architecture#IVIOTAUserInteractionArchitecture-SWIVIUpdateProgress" SW Vehicle Update Progress]]
+  |||
+end
+
+IFT_UPD_ENG -> IFT_UPD_ENG ++: startPostUpdate()
+group Post-Install Operations
+  IFT_UPD_ENG -> IFT_UPD_ENG: Run post-install scripts
+  ref over IFT_UPD_ENG, IFT_UPD_VRF: [["#IVIOTAUpdateArchitecture-SFISWUpdateProcedure" SFI SW Update Procedure]]
+  ref over IFT_UPD_ENG, IFT_UPD_VRF: [["https://confluence.e-kama.com/display/IVI/IVI+OTA+User+Interaction+Architecture#IVIOTAUserInteractionArchitecture-SWIVIUpdateProgress" SW IVI Update Progress]]
+  IFT_UPD_ENG -> IFT_UPD_ENG: Verify critical components
+  IFT_UPD_ENG -> IFT_UPD_ENG: Update bootloader variables
+  IFT_UPD_ENG -> IFT_UPD_SRV ++: Update progress: [91..100%]
+  deactivate IFT_UPD_ENG
+  |||
+end
+deactivate IFT_UPD_ENG
+
+IFT_UPD_SRV -> IFT_UDS_SRV --++: Update progress [91..100%]
+IFT_UDS_SRV ->  System --++: Update progress [91..100%]
+ System ->  System : Calculate Vehicle SW Update Status
+ System -> IFT_UPD_APP --++: vehicle/{VIN}/upgrade/display/flashingProgress
+IFT_UPD_APP -> IFT_UPD_APP --: Display Vehicle SW Update Status
+|||
+ref over IFT_UPD_SRV, IFT_UPD_APP: [["https://confluence.e-kama.com/display/IVI/IVI+OTA+User+Interaction+Architecture#IVIOTAUserInteractionArchitecture-SWVehicleUpdateProgress" SW Vehicle Update Progress]]
+|||
+
+== FINALIZING ==
+autonumber inc A
+IFT_UPD_ENG o-> IFT_UPD_ENG ++: CompletePostinstall()
+IFT_UPD_ENG -> IFT_UPD_SRV ++: FINALIZING
+IFT_UPD_SRV -> IFT_UPD_SRV --: onStatusUpdate()
+
+IFT_UPD_ENG -> IFT_UPD_SNM ++: Merge snapshots
+IFT_UPD_SNM -> IFT_UPD_SNM --: Cleanup old snapshots
+IFT_UPD_ENG -> IFT_UPD_ENG: Mark slot as successful
+
+hnote over IFT_UPD_ENG
+Slots indexes:
+\t
+0 - Forbidden
+1 - <<A>> boot slot
+2 - <<B>> boot slot
+end note
+IFT_UPD_ENG -> IFT_UPD_ENG: SetActiveBootSlot( new_slot_index )
+IFT_UPD_ENG -> IFT_UPD_ENG --: Mark inactive slot as unbootable
+
+== UPDATED_NEED_REBOOT ==
+autonumber inc A
+IFT_UPD_ENG o-> IFT_UPD_ENG ++: UpdateFinished()
+IFT_UPD_ENG -> IFT_UPD_SRV ++: UPDATED_NEED_REBOOT
+IFT_UPD_SRV -> IFT_UPD_SRV --: onStatusUpdate()
+IFT_UPD_ENG -> IFT_UPD_SRV --++: SUCCESS
+IFT_UPD_SRV -> IFT_UPD_SRV : onPayloadApplicationComplete()
+IFT_UPD_SRV -> IFT_UDS_SRV --++: Update progress: 100%
+IFT_UDS_SRV ->  System --++: Update progress: 100%
+ System ->  System: Calculate Vehicle SW Update Status
+note right  System: IVI SW vehicle progress is 100%
+ System -> IFT_UDS_SRV --++: IFT_UDS_SRV Reboot Request
+IFT_UDS_SRV -> IFT_UPD_SRV --++: Reboot Request
+IFT_UPD_SRV -> IFT_UPD_SRV ++: onRebootRequested()
+IFT_UPD_SRV -> IFT_PWM **: getSystemService
+IFT_UPD_SRV -> IFT_PWM --++: reboot( reason = "reboot-ab-update" )
+deactivate IFT_UPD_SRV
+IFT_PWM -> IFT_PWM: prepareShutdown()
+IFT_PWM -> IFT_PWM !!: shutdown system
+|||
+
+== ATTEMPTING_ROLLBACK ==
+ref over IFT_UPD_APP, IFT_UPD_ENG: [["https://confluence.e-kama.com/display/IVI/IVI+OTA+Rollback+Architecture#IVIOTARollbackArchitecture-IVISWRollbackdueIFTBoot-upFault" IVI SW Rollback]] 

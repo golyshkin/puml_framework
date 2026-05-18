@@ -1,0 +1,115 @@
+!$CONFIG = {
+"HELP": false,
+"SHOW_COMP": false,
+"TEOZ": false,
+"AUTHOR": "Alexandr.Golyshkin@atom.team",
+"DIAGRAM_ID": "IVI-OTA-SEQ",
+"DIAGRAM_VER": "v.5",
+"DIAGRAM_TITLE": "SW Update Completed"
+}
+
+!include https://gitlab.int.e-kama.com/open/architecture/dcp/sw-architecture/-/raw/master/settings/seq.puml
+!include $URL_BASE/components/external.puml
+!include $URL_BASE/components/generic.puml
+!include $URL_BASE/components/sw_ift.puml
+!include $URL_BASE/components/sw_sfi.puml
+!include $URL_BASE/components/sw_vcp.puml
+
+ref over SGW, IVI_VCP : [["https://confluence.e-kama.com/display/IVI/IVI+OTA+User+Interaction+Architecture#IVIOTAUserInteractionArchitecture-SWUpdateProgressStatus" SW Update Progress]]
+
+==IVI SW Update Completed==
+SGW o-> IVI_IFT ++: UDS: Routine Control 0x31 [0x03 - Installation Status]
+note over IVI_IFT
+IVI_IFT & IVI_SFI are completely updated and update status is <<UPDATED_NEED_REBOOT>>
+end note
+IVI_IFT -> IVI_IFT: isOTAUpdateCompleted(): true
+IVI_IFT --> SGW ++: STATUS_COMPLETED 
+SGW -> IVI_IFT ++ : UDS: Reset (0x11)
+note right
+**Reset sub-function:**
+
+# 0x01 - Hard Reset
+# 0x02 - Key Off On Reset
+# 0x03 - Soft Reset
+end note
+IVI_IFT -> IVI_IFT: onIVIResetCommand( **true** )
+IVI_IFT --> IFT_PWM **: create 
+IVI_IFT -> IFT_PWM ++: reboot( REBOOT_REASON_SW_UPDATE )
+IVI_IFT --> SGW --: SUCCESS
+deactivate IVI_IFT
+deactivate SGW
+
+IFT_PWM -> IVI_SFI ++-- : ATOM_REGISTER_REBOOT_BOARD
+IVI_SFI -> IVI_SFI: getCurrentState() : current_state
+IVI_SFI -> IVI_SFI ++: atom_regs_reboot_board_set()
+IVI_SFI -> IVI_SFI: getSwUpdateBootWatchDogTime(): boot_watchdog_time
+IVI_SFI -> IVI_VCP ++-- : mcp_send_soc_reset_request( boot_watchdog_time )
+deactivate IVI_SFI
+IVI_VCP -> IVI_VCP : Reset CPU Cores
+IVI_VCP -> IVI_VCP --: startSfiBootWatchDog( boot_watchdog_time )
+deactivate SGW
+
+== IVI Reboot ==
+alt IVI SW Update is SUCCESS and OTA mode enabled
+autonumber inc A
+?o-> IVI_SFI ++: System Starts Boot-up
+IVI_SFI -> IVI_SFI : sfi_boot()
+
+autonumber inc A
+?o-> IVI_IFT ++: System Starts Boot-up
+note over IVI_IFT: The IVI still is in OTA and SERVICE modes
+
+IVI_IFT -> IVI_IFT: getBootReason(): boot_reason
+alt boot_reason = REBOOT_REASON_SW_UPDATE
+  IVI_IFT -> IVI_IFT: checkSystemIntegrity(): SUCCESS
+  IVI_IFT -> IVI_IFT: checkSystemHealth(): SUCCESS
+  note over IVI_SFI: The both IVI_IFT & IVI_SFI domains are operable, IVI_SFI requests the IVI_VCP to change **SERVICE -> RUN** mode and to start IVI_SFI heartbeats monitor on IVI_VCP side
+  IVI_IFT -> IVI_SFI : ATOM_REGISTER_IFT_STATE( RUN )
+  IVI_SFI ->> IVI_VCP --++: SYSTEM_SCP_CTRL_AP_UPDATE_END
+  IVI_VCP -> IVI_VCP : setSocState( RUN )
+  IVI_VCP -> IVI_VCP --: startSafetyCheck()
+  |||
+end alt
+
+IVI_IFT -> IVI_IFT: start <<IVI_OTA>> Application
+IVI_IFT -> SGW ++: subscribe( vehicle/{VIN}/upgrade/display/flashingProgress )
+IVI_IFT -> SGW : subscribe( vehicle/{VIN}/upgrade/display/flashingResult )
+IVI_IFT -> SGW --: subscribe( vehicle/{VIN}/upgrade/display/error )
+deactivate SGW
+
+note right IVI_IFT: IVI domain provides the current installed version to SGW.
+ref over IVI_IFT, IVI_VCP: [["https://confluence.e-kama.com/display/IVI/IVI+OTA+Architecture#IVIOTAArchitecture-RequestSWversionVCP,SFI,IFT" Request SW version IVI_VCP,IVI_SFI,IVI_IFT]]
+else else
+    ref over SGW, IVI_VCP: [["https://confluence.e-kama.com/display/IVI/IVI+OTA+Rollback+Architecture#IVIOTARollbackArchitecture-SFIBoot-upFailafterSWUpdate" IVI SW Rollback due IVI_SFI Boot-up Fault]]
+    ref over SGW, IVI_VCP: [["https://confluence.e-kama.com/display/IVI/IVI+OTA+Rollback+Architecture#IVIOTARollbackArchitecture-IVISWRollbackdueIFTSystemIntegrityFault" IVI SW Rollback due IVI_IFT System Integrity Fault]]
+    ref over SGW, IVI_VCP: [["https://confluence.e-kama.com/display/IVI/IVI+OTA+Rollback+Architecture#IVIOTARollbackArchitecture-IVISWRollbackdueIFTSystemHealthFault" IVI SW Rollback due IVI_IFT System Health Fault]] 
+    |||
+end opt
+
+==Vehicle SW Update in Progress==
+note across: IVI SW update was completed, but vehicle SW update still continue.
+ref over SGW, IVI_VCP: [[ "https://confluence.e-kama.com/display/IVI/IVI+OTA+User+Interaction+Architecture#IVIOTAUserInteractionArchitecture-SWVehicleUpdateProgress" SW Vehicle Update Progress]]
+
+==Vehicle SW Update Completed==
+autonumber inc A
+note across
+If all ECUs are completed updated in the vehicle, the new vehicle SW version will be different with SW version before OTA start.
+end note
+
+SGW o-> IVI_IFT ++:  vehicle/{VIN}/upgrade/display/flashingResult( newVersion, changes )
+IVI_IFT -> IVI_IFT --: Display <<Support_OTA_UpdateCompleted>>
+|||
+ref over SGW, IVI_VCP: [[ "https://confluence.e-kama.com/display/IVI/IVI+OTA+Architecture#IVIOTAArchitecture-VehicleOperationalModeHandle" Vehicle Operational Mode Handle]]
+|||
+deactivate IVI_IFT
+==Vehicle SW Update Error==
+alt Vehicle SW Rollback is SUCCESS
+  |||
+  ref over SGW, IVI_VCP: [["https://confluence.e-kama.com/display/IVI/IVI+OTA+User+Interaction+Architecture#IVIOTAUserInteractionArchitecture-ErrorSWUpdate" Error SW Update]]
+  |||
+  ref over SGW, IVI_VCP: [[ "https://confluence.e-kama.com/display/IVI/IVI+OTA+Architecture#IVIOTAArchitecture-VehicleOperationalModeHandle" Vehicle Operational Mode Handle]]
+else else
+  |||
+  ref over SGW, IVI_VCP: [["https://confluence.e-kama.com/display/IVI/IVI+OTA+User+Interaction+Architecture#IVIOTAUserInteractionArchitecture-ErrorCriticalSWUpdate" Error Critical SW Update]]
+  |||
+end alt

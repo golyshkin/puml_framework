@@ -1,24 +1,60 @@
 @startuml
 
-' Start IVI SW Compoenets Definition
+$addGroup( "sw_ift", "Common" )
+$addActor( "sw_ift", "participant", "IVI_IFT",      "Infotainment", "system" )
+$addActor( "sw_ift", "participant", "IVI_TEE",      "Trusted Execution Environment", "service" )
+$addActor( "sw_ift", "participant", "IFT_ANY_APP",  "Any Application", "app" )
+$addActor( "sw_ift", "participant", "IFT_ANY_SRV",  "Any Service", "service" )
 
-$addActor( "sw_ift", "participant", "IVI_IFT", "Infotainment", "system" )
-$addActor( "sw_ift", "participant", "IFT_OTA", "OTA Application", "app" )
-$addActor( "sw_ift", "participant", "IFT_AM",  "Account Manager", "service" )
-$addActor( "sw_ift", "participant", "IFT_OBC", "On Board Computer", "app" )
-$addActor( "sw_ift", "participant", "IFT_NTF", "Notification Center", "app" )
-$addActor( "sw_ift", "participant", "IFT_PM",  "Power Manager", "service" )
-$addActor( "sw_ift", "participant", "IFT_AUM", "Audio Manager", "service" )
-$addActor( "sw_ift", "participant", "IFT_AUS", "Audio Settings", "app" )
-$addActor( "sw_ift", "participant", "IFT_KBD", "Keyboard", "app" )
-$addActor( "sw_ift", "participant", "IFT_FAV", "Favorites", "app" )
-$addActor( "sw_ift", "participant", "IFT_FM",  "FM Radio", "app" )
-$addActor( "sw_ift", "participant", "IFT_PHN", "Phonebook", "app" )
+$addGroup( "sw_ift", "Atom Application" )
+$addActor( "sw_ift", "participant", "IFT_UPD_APP",  "Update", "app" )
+$addActor( "sw_ift", "participant", "IFT_OBC_APP",  "On Board Computer", "app" )
+$addActor( "sw_ift", "participant", "IFT_NTF_APP",  "Notification Center", "app" )
+$addActor( "sw_ift", "participant", "IFT_KBD_APP",  "Keyboard", "app" )
+$addActor( "sw_ift", "participant", "IFT_FAV_APP",  "Favorites", "app" )
+$addActor( "sw_ift", "participant", "IFT_FM_APP",   "FM Radio", "app" )
+$addActor( "sw_ift", "participant", "IFT_PHN_APP",  "Phonebook", "app" )
+$addActor( "sw_ift", "participant", "IFT_BRD_APP",  "On-Board", "app" )
+$addActor( "sw_ift", "participant", "IFT_STT_APP",  "Settings", "app" )
+$addActor( "sw_ift", "participant", "IFT_AOD_APP",  "Always On Display", "app" )
+$addActor( "sw_ift", "participant", "IFT_BRD_APP",  "Bird View", "app" )
+$addActor( "sw_ift", "participant", "IFT_FCR_APP",  "Face Recognition", "app" )
+$addActor( "sw_ift", "participant", "IFT_ECL_APP",  "E-Call", "app" )
+$addActor( "sw_ift", "participant", "IFT_LNC_APP",  "Launch", "app" )
+$addActor( "sw_ift", "participant", "IFT_HUD_APP",  "Head-Up Display", "app" )
+$addActor( "sw_ift", "participant", "IFT_NAV_APP",  "Navigation", "app" )
+$addActor( "sw_ift", "participant", "IFT_VA_APP",   "Voice Assistant", "app" )
 
-' End IVI SW Compoenets Definition
+$addGroup( "sw_ift", "Atom Service" )
+$addActor( "sw_ift", "participant", "IFT_UDS_SRV",  "Update UDS", "service" )
+$addActor( "sw_ift", "participant", "IFT_UPD_SRV",  "Update", "service" )
+$addActor( "sw_ift", "participant", "IFT_SB_SRV",   "SideBar", "service" )
+$addActor( "sw_ift", "participant", "IFT_VIG_SRV",  "Voice Interaction Gateway", "service" )
+$addActor( "sw_ift", "participant", "IFT_SYNC_SRV", "Sync", "service" )
+$addActor( "sw_ift", "participant", "IFT_KPL_SRV",  "Keep Alive", "service" )
+$addActor( "sw_ift", "participant", "IFT_BRD_SRV",  "Bird View", "service" )
+$addActor( "sw_ift", "participant", "IFT_PKM_SRV",  "Package Manager", "service" )
 
-!if ( $CONFIG.HELP == true )
-	note across #lightblue: **Defined SW IFT Components**:\n\t\n**Note:** $COMP_NOTE\n\t\n$getActorList( "sw_ift" )
+$addGroup( "sw_ift", "Atom Platform" )
+$addActor( "sw_ift", "participant", "IFT_MBS",      "Mailbox", "service" )
+
+$addGroup( "sw_ift", "Atom Component" )
+$addActor( "sw_ift", "participant", "IFT_VAB",      "Voice Button", "comp" )
+$addActor( "sw_ift", "participant", "IFT_MQTT",     "MQTT Client", "comp" )
+
+$addGroup( "sw_ift", "AAOS" )
+$addActor( "sw_ift", "participant", "IFT_UPD_ENG",  "Google Update", "service" )
+$addActor( "sw_ift", "participant", "IFT_UPD_VRF",  "Google Verifier", "service" )
+$addActor( "sw_ift", "participant", "IFT_UPD_SNM",  "Google Snapshot Manager", "service" )
+$addActor( "sw_ift", "participant", "IFT_KRN",      "Linux Kernel", "component" )
+$addActor( "sw_ift", "participant", "IFT_AM",       "Account Manager", "service" )
+$addActor( "sw_ift", "participant", "IFT_WM",       "Window Manager", "service" )
+$addActor( "sw_ift", "participant", "IFT_PWM",      "Power Manager", "service" )
+$addActor( "sw_ift", "participant", "IFT_AUM",      "Audio Manager", "service" )
+
+!if ( $CONFIG.SHOW_COMP == true )
+   note across: <b>Include Command:</b> <i>!include</i> <i>$</i><i>URL_BASE/components/sw_ift.puml</i>
+	note across #lightblue: **SW IFT Components**:\n\t\n**Note:** $COMP_NOTE\n\t\n$getActorList( "sw_ift" )
 !endif
 
 @enduml

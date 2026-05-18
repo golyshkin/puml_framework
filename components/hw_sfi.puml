@@ -1,0 +1,12 @@
+@startuml
+
+$addGroup( "hw_sfi", "Common" )
+$addActor( "hw_sfi", "database", "SFI_XSPI", "XSPI Flash", "hw" )
+
+
+!if ( $CONFIG.SHOW_COMP == true )
+   note across: <b>Include Command:</b> <i>!include</i> <i>$</i><i>URL_BASE/components/hw_sfi.puml</i>
+	note across #lightblue: **HW SFI Components**:\n\t\n**Note:** $COMP_NOTE\n\t\n$getActorList( "hw_sfi" )
+!endif
+
+@enduml

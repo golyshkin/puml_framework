@@ -1,0 +1,89 @@
+!$CONFIG = {
+"HELP": false,
+"SHOW_COMP": false,
+"TEOZ": true,
+"AUTHOR": "Alexandr.Golyshkin@atom.team",
+"DIAGRAM_ID": "IVI-OTA-SEQ",
+"DIAGRAM_VER": "v.9",
+"DIAGRAM_TITLE": "Error SFI boot-up after SW update - Rollback SFI & IFT Domains"
+}
+
+' Date 15.04.2026
+!include https://gitlab.int.e-kama.com/open/architecture/dcp/sw-architecture/-/raw/master/settings/seq.puml
+'!include $URL_BASE/components/generic.puml
+!include $URL_BASE/components/sw_ift.puml
+!include $URL_BASE/components/sw_sfi.puml
+!include $URL_BASE/components/sw_vcp.puml
+
+ref over IFT_UPD_ENG, IVI_VCP: [[ "https://confluence.e-kama.com/pages/viewpage.action?pageId=217384418#IVIOTAUpdateArchitecture-SWUpdateCommon" SW Update Common]]
+
+==IVI_SFI Flashing Completed==
+IFT_UPD_ENG o-> IFT_UPD_ENG ++: CompletePostinstall()
+IFT_UPD_ENG -> IFT_UPD_ENG: SetActiveBootSlot( new_slot_index )
+hnote right IFT_UPD_ENG
+Used **/sys/kernel/atom_sfi_misc/boot_slot** for setting a system boot slot\t
+\t
+Slots indexes:
+\t
+0 - Forbidden,
+1 - <<A>> boot slot
+2 - <<B>> boot slot
+end note
+IFT_UPD_ENG -> IVI_SFI --++: apb_send( ATOM_REGISTER_BOOT_SECTOR, new_slot_index )
+
+IVI_SFI -> IVI_SFI ++: atom_regs_boot_slot_set
+note over IVI_SFI: Send request to change boot partition to IVI_VCP
+IVI_SFI ->> IVI_VCP --++: SYSTEM_SCP_CTRL_AP_BOOT_CONFIG( new_slot_index )
+deactivate IVI_SFI
+IVI_VCP -> IVI_VCP : getCurrentSlot(): old_slot_index
+IVI_VCP -> IVI_VCP --: setActiveBootSlot( new_slot_index )
+
+==Overall SW Upgrade Progress is 100%==
+autonumber inc A
+IFT_UPD_ENG o-> IVI_SFI ++: ATOM_REGISTER_REBOOT_BOARD
+IVI_SFI -> IVI_SFI: atom_regs_reboot_board_set()
+IVI_SFI -> IVI_VCP --++: SYSTEM_SCP_CTRL_SOC_RESET_REQ( boot_time )
+IVI_VCP -> IVI_VCP : Reset CPU Cores
+IVI_VCP -> IVI_VCP: fail_count = 0
+{start} IVI_VCP -> IVI_VCP --: startSfiBootWatchDog( boot_time )
+
+==IVI System Reboot==
+autonumber inc A
+loop
+  ?o-> IVI_SFI ++: System Starts Boot-up
+  IVI_SFI -> IVI_SFI : sfi_boot()
+  note over IVI_SFI: An error occurred during IVI_SFI booting. The IVI_SFI booting stops.
+  IVI_SFI -> IVI_SFI : boot_sequencer(): ERR_NO_BOOT_SEQ
+  IVI_SFI -> IVI_SFI: sfi_shutdown()
+  destroy IVI_SFI
+    
+  {start} <-> {end}: boot_time
+  {end} IVI_VCP o-> IVI_VCP ++: startSfiBootWatchDogExpired()
+  alt fail_count < 3
+    IVI_VCP -> IVI_VCP: fail_count + 1
+  else else
+    IVI_VCP -> IVI_VCP : setActiveBootSlot( old_slot_index )
+    opt
+      ref over IFT_UPD_ENG, IVI_VCP: [[ "#IVIOTARollbackArchitecture-SFIBoot-upFailAfterRollback" SFI Boot-up Fail After Rollback]]
+      |||
+    end opt
+    |||
+  end alt
+  IVI_VCP -> IVI_VCP --: Reset CPU Cores
+end loop
+
+==IVI System Rollback==
+autonumber inc A
+?o-> IVI_SFI ++: System Starts Boot-up
+IVI_SFI -> IVI_SFI: read_mpidr(): boot_slot_index
+note over IVI_SFI
+Bootloader loads the IVI_SFI image from restored boot slot
+end note
+IVI_SFI -> IVI_SFI --: image_loading_xspi( boot_slot_index )
+
+?o-> IFT_UPD_ENG ++: System Starts Boot-up
+IFT_UPD_ENG -> IFT_UPD_ENG: getCurrentSlot(): boot_slot_index
+note over IFT_UPD_ENG
+LK Bootloader loads IFt image from restored boot slot
+end note
+IFT_UPD_ENG -> IFT_UPD_ENG --: imageLoad( boot_slot_index )

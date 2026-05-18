@@ -1,0 +1,57 @@
+!$CONFIG = {
+"HELP": false,
+"AUTHOR": "Aleksandr.Golyshkin@atom.team",
+"DIAGRAM_ID": "IVI-OTA-SEQ",
+"DIAGRAM_VER": "v.6",
+"DIAGRAM_TITLE": "Driver Starts the SW Update"
+}
+
+!include https://gitlab.int.e-kama.com/open/architecture/dcp/sw-architecture/-/raw/master/settings/seq.puml
+!include $URL_BASE/components/generic.puml
+!include $URL_BASE/components/sw_ift.puml
+!include $URL_BASE/components/external.puml
+
+note right of Driver
+**Pre-condition**:
+\t
+Active <<Support_OTA_UpdateConfirmation>>
+end note
+
+ref over Driver, SGW: [["#IVIOTAUserInteractionArchitecture-DriverChecksaSWUpdate" Driver Checks a SW Update]]
+
+Driver o-> IFT_UPD_APP ++ : Push <<Start Update>>
+IFT_UPD_APP --> IFT_MBS **: create
+IFT_UPD_APP -> IFT_MBS ++: getPrndStatus()
+IFT_MBS --> IFT_UPD_APP --: VCU_ActualGear
+
+opt VCU_ActualGear != P (0x1)
+  note over IFT_UPD_APP
+  IVI displays the **support.ota.start_update_from_nrd_gears.toast** pop-up 
+  when user confirms the SW update and vehicle gearbox not in parking mode
+  end note
+  IFT_UPD_APP -> IFT_UPD_APP : Display <<support.ota.start_update_from_nrd_gears.toast>>
+  |||
+  else else
+  note right IFT_UPD_APP: User confirms to start a SW update
+  IFT_UPD_APP -> SGW ++: vehicle/{VIN}/upgrade/display/userAction( USER_ACTION_UPDATE )
+  SGW -> SGW : Start Check Preconditions
+  autonumber 2.1 "#.#"
+
+  note right IFT_UPD_APP
+  The unmet preconditions are found. The topic contains the list of OTA preconditions to display.
+  end note
+  SGW -> IFT_UPD_APP --++: vehicle/{VIN}/upgrade/display/preconditionList
+  IFT_UPD_APP -> IFT_UPD_APP --: Display/Update <<Support_OTA_PreconditionList>>
+  |||
+  ref over Driver, SGW: [["#IVIOTAUserInteractionArchitecture-PreconditionCheckHandle" Precondition Check Handle - <<Support_OTA_PreconditionList>> is Active]]
+
+  autonumber inc A
+  note over SGW: User fixed all OTA preconditions warnings.
+  SGW o-> SGW ++: Starts SW Update Timer
+
+  SGW -> IFT_UPD_APP--++: vehicle/{VIN}/upgrade/display/updateTimer: updateCountDownSec
+  deactivate SGW
+  IFT_UPD_APP -> IFT_UPD_APP --: Display/Update <<Support_OTA_Timer>>
+  deactivate IFT_UPD_APP
+  |||
+end opt

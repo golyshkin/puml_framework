@@ -1,0 +1,58 @@
+!$CONFIG = {
+"AUTHOR": "Alexandr.Golyshkin@atom.team",
+"DIAGRAM_ID": "IVI-VIG-SEQ",
+"DIAGRAM_VER": "v.5",
+"DIAGRAM_TITLE": "VA Error Handle"
+}
+
+!include https://gitlab.int.e-kama.com/open/architecture/dcp/sw-architecture/-/raw/master/settings/seq.puml
+'!include $URL_BASE/components/generic.puml
+'!include $URL_BASE/components/external.puml
+'!include $URL_BASE/components/sw_vcp.puml
+'!include $URL_BASE/components/sw_sfi.puml
+!include $URL_BASE/components/sw_ift.puml
+
+' date 29.04.
+note right IFT_VA_APP: VA error detected
+IFT_VA_APP o-> IFT_VA_APP ++: errorHandle()
+IFT_VA_APP ->  IFT_VIG_SRV --++: onStateChanged( state, errorType )
+
+opt state = ERROR
+  alt errorType = ERROR   
+    note right  IFT_VIG_SRV
+    VA has detected a following any errors:
+    \t
+    # Libraries load error
+    # DSP error
+    # Mics error
+    # System error
+
+    VA functionality is not more operable.
+    end note
+    IFT_VIG_SRV ->  IFT_VIG_SRV ++: onVAError()
+    IFT_VIG_SRV ->  IFT_VIG_SRV : stopVaCommandsProcessing()
+    IFT_VIG_SRV ->  IFT_VIG_SRV: setState( OFF)
+    IFT_VIG_SRV -> IFT_MQTT: vehicle/{VIN}/hardware/entertainment/voiceAssistantState = Inactive
+    IFT_VIG_SRV -> IFT_VAB --++: onVabStateChanged( OFF )
+    IFT_VAB -> IFT_VAB --: hideVoiceButton()
+
+    deactivate IFT_VAB
+    |||
+  else errorType = WARNING
+    note right  IFT_VIG_SRV
+    VA has detected a following any warnings:
+    \t
+    # LLM engine error
+    # Data source error
+    # Connection error
+
+    VA functionality is partially operable, so lets continue monitoring.
+    end note
+    IFT_VIG_SRV -> IFT_VIG_SRV --: logErrorState()
+    |||
+  end alt
+else else
+    |||
+    ref over IFT_VIG_SRV, IFT_VAB: [[https://confluence.e-kama.com/display/IVI/Voice+Assistance+Button+Architecture#VoiceAssistanceButtonArchitecture-VoiceAnimationStateHandle Voice Animation State Handle]]
+    |||
+end opt
